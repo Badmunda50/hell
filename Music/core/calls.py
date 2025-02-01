@@ -279,6 +279,16 @@ class HellMusic(PyTgCalls):
         user_ids = [user.user_id for user in users]
         await self.autoend(chat_id, user_ids)
 
+    async def autoclean(self, file: str):
+        # Ensure file is a string
+        if isinstance(file, str):
+            try:
+                os.remove(file)
+                os.remove(f"downloads/{file}.webm")
+                os.remove(f"downloads/{file}.mp4")
+            except:
+                pass
+
     async def join_gc(self, chat_id: int):
         try:
             try:
