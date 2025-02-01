@@ -40,6 +40,21 @@ def is_on_off(value: int) -> bool:
     return value == 1
 
 class YouTube:
+    def __init__(self):
+        self.audio_opts = {
+            'format': 'bestaudio/best',
+            'outtmpl': '%(id)s.%(ext)s',
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': '192',
+            }],
+        }
+        self.video_opts = {
+            'format': 'bestvideo+bestaudio',
+            'outtmpl': '%(id)s.%(ext)s',
+        }
+
     async def get_data(self, link: str, video_id: bool, limit: int = 1, cookies_file: str = None) -> list:
         yt_url = await self.format_link(link, video_id)
         collection = []
