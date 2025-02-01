@@ -253,44 +253,44 @@ class HellMusic(PyTgCalls):
                 raise ChangeVCException(f"[ChangeVCException]: {e}")
 
     async def join_vc(self, chat_id: int, file_path: str, video: bool = False):
-        # define input stream
-        if video:
-            input_stream = MediaStream(
-                file_path, AudioQuality.MEDIUM, VideoQuality.MEDIUM
-            )
-        else:
-            input_stream = MediaStream(file_path, AudioQuality.MEDIUM)
+    # define input stream
+    if video:
+        input_stream = MediaStream(
+            file_path, AudioQuality.MEDIUM, VideoQuality.MEDIUM
+        )
+    else:
+        input_stream = MediaStream(file_path, AudioQuality.MEDIUM)
 
-        # join vc
+    # join vc
+    try:
+        await self.join_call(
+            chat_id, input_stream, stream_type=StreamType().pulse_stream
+        )
+    except NoActiveGroupCall:
         try:
-            await self.join_group_call(
+            await self.join_gc(chat_id)
+        except Exception as e:
+            await self.leave_vc(chat_id)
+            raise JoinGCException(e)
+        try:
+            await self.join_call(
                 chat_id, input_stream, stream_type=StreamType().pulse_stream
             )
-        except NoActiveGroupCall:
-            try:
-                await self.join_gc(chat_id)
-            except Exception as e:
-                await self.leave_vc(chat_id)
-                raise JoinGCException(e)
-            try:
-                await self.join_group_call(
-                    chat_id, input_stream, stream_type=StreamType().pulse_stream
-                )
-            except Exception as e:
-                await self.leave_vc(chat_id)
-                raise JoinVCException(f"[JoinVCException]: {e}")
-        except AlreadyJoinedError:
-            raise UserException(
-                f"[UserException]: Already joined in the voice chat. If this is a mistake then try to restart the voice chat."
-            )
         except Exception as e:
-            raise UserException(f"[UserException]: {e}")
+            await self.leave_vc(chat_id)
+            raise JoinVCException(f"[JoinVCException]: {e}")
+    except AlreadyJoinedError:
+        raise UserException(
+            f"[UserException]: Already joined in the voice chat. If this is a mistake then try to restart the voice chat."
+        )
+    except Exception as e:
+        raise UserException(f"[UserException]: {e}")
 
-        await db.add_active_vc(chat_id, "video" if video else "voice")
-        self.audience[chat_id] = {}
-        users = await self.vc_participants(chat_id)
-        user_ids = [user.user_id for user in users]
-        await self.autoend(chat_id, user_ids)
+    await db.add_active_vc(chat_id, "video" if video else "voice")
+    self.audience[chat_id] = {}
+    users = await self.vc_participants(chat_id)
+    user_ids = [user.user_id for user in users]
+    await self.autoend(chat_id, user_ids)
 
     async def autoclean(self, file: str):
         # Ensure file is a string
