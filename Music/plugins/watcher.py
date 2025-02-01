@@ -77,38 +77,45 @@ async def vc_end(_, msg: Message):
     await msg.continue_propagation()
 
 
-@hellmusic.on_kicked()
-@hellmusic.on_left()
-async def end_streaming(_, chat_id: int):
-    await hellmusic.leave_vc(chat_id)
-    await db.set_loop(chat_id, 0)
-
-
-@hellmusic.on_stream_end()
-async def changed(_, update: Update):
-    if isinstance(update, StreamAudioEnded):
-        await hellmusic.change_vc(update.chat_id)
-
-
-@hellmusic.on_participants_change()
-async def members_change(_, update: Update):
-    try:
+async def decorators():
+    @hellmusic.on_update(filters.chat_update(ChatUpdate.Status.KICKED))
+    async def on_kicked(update: Update):
         chat_id = update.chat_id
-        audience = hellmusic.audience.get(chat_id)
-        users = await hellmusic.vc_participants(chat_id)
-        user_ids = [user.user_id for user in users]
-        if not audience:
-            await hellmusic.autoend(chat_id, user_ids)
-        else:
-            new = (
-                audience + 1
-                if update.user_was_added
-                else audience - 1
-            )
-            hellmusic.audience[chat_id] = new
-            await hellmusic.autoend(chat_id, user_ids)
-    except:
-        return
+        await hellmusic.leave_vc(chat_id)
+        await db.set_loop(chat_id, 0)
+
+    @hellmusic.on_update(filters.chat_update(ChatUpdate.Status.LEFT))
+    async def on_left(update: Update):
+        chat_id = update.chat_id
+        await hellmusic.leave_vc(chat_id)
+        await db.set_loop(chat_id, 0)
+
+    @hellmusic.on_update(filters.stream_end())
+    async def on_stream_end(update: Update):
+        if isinstance(update, StreamAudioEnded):
+            await hellmusic.change_vc(update.chat_id)
+
+    @hellmusic.on_update(filters.participants_change())
+    async def on_participants_change(update: Update):
+        try:
+            chat_id = update.chat_id
+            audience = hellmusic.audience.get(chat_id)
+            users = await hellmusic.vc_participants(chat_id)
+            user_ids = [user.user_id for user in users]
+            if not audience:
+                await hellmusic.autoend(chat_id, user_ids)
+            else:
+                new = (
+                    audience + 1
+                    if update.user_was_added
+                    else audience - 1
+                )
+                hellmusic.audience[chat_id] = new
+                await hellmusic.autoend(chat_id, user_ids)
+        except:
+            return
+
+await decorators()
 
 
 async def update_played():
