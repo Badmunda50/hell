@@ -147,99 +147,99 @@ class HellMusic(PyTgCalls):
         await self.music.change_stream(chat_id, input_stream)
 
     async def change_vc(self, chat_id: int):
-    try:
+        try:
+            get = Queue.get_queue(chat_id)
+            if get == []:
+                return await self.leave_vc(chat_id)
+            loop = await db.get_loop(chat_id)
+            if loop == 0:
+                file = Queue.rm_queue(chat_id, 0)
+                await self.autoclean(file)
+            else:
+                await db.set_loop(chat_id, loop - 1)
+        except Exception as e:
+            LOGS.error(e)
+            return await self.leave_vc(chat_id)
         get = Queue.get_queue(chat_id)
         if get == []:
             return await self.leave_vc(chat_id)
-        loop = await db.get_loop(chat_id)
-        if loop == 0:
-            file = Queue.rm_queue(chat_id, 0)
-            await self.autoclean(file)
-        else:
-            await db.set_loop(chat_id, loop - 1)
-    except Exception as e:
-        LOGS.error(e)
-        return await self.leave_vc(chat_id)
-    get = Queue.get_queue(chat_id)
-    if get == []:
-        return await self.leave_vc(chat_id)
-    chat_id = get[0]["chat_id"]
-    duration = get[0]["duration"]
-    queue = get[0]["file"]
-    title = get[0]["title"]
-    user_id = get[0]["user_id"]
-    vc_type = get[0]["vc_type"]
-    video_id = get[0]["video_id"]
-    try:
-        user = (await hellbot.app.get_users(user_id)).mention(style="md")
-    except:
-        user = get[0]["user"]
-    if queue:
-        tg = True if video_id == "telegram" else False
-        if tg:
-            to_stream = queue
-        else:
-            to_stream, _ = await ytube.download(
-                video_id, True, True if vc_type == "video" else False
-            )
-        if not os.path.exists(to_stream):
-            raise ChangeVCException(f"File not found: {to_stream}")
-        if vc_type == "video":
-            input_stream = AudioVideoPiped(
-                to_stream, MediumQualityAudio(), MediumQualityVideo()
-            )
-        else:
-            input_stream = AudioPiped(to_stream, MediumQualityAudio())
+        chat_id = get[0]["chat_id"]
+        duration = get[0]["duration"]
+        queue = get[0]["file"]
+        title = get[0]["title"]
+        user_id = get[0]["user_id"]
+        vc_type = get[0]["vc_type"]
+        video_id = get[0]["video_id"]
         try:
-            photo = thumb.generate((359), (297, 302), video_id)
-            await self.music.change_stream(int(chat_id), input_stream)
-            btns = Buttons.player_markup(
-                chat_id,
-                "None" if video_id == "telegram" else video_id,
-                hellbot.app.username,
-            )
-            if photo:
-                sent = await hellbot.app.send_photo(
-                    int(chat_id),
-                    photo,
-                    TEXTS.PLAYING.format(
-                        hellbot.app.mention,
-                        title,
-                        duration,
-                        user,
-                    ),
-                    reply_markup=InlineKeyboardMarkup(btns),
-                )
-                os.remove(photo)
+            user = (await hellbot.app.get_users(user_id)).mention(style="md")
+        except:
+            user = get[0]["user"]
+        if queue:
+            tg = True if video_id == "telegram" else False
+            if tg:
+                to_stream = queue
             else:
-                sent = await hellbot.app.send_message(
-                    int(chat_id),
-                    TEXTS.PLAYING.format(
-                        hellbot.app.mention,
-                        title,
-                        duration,
-                        user,
-                    ),
-                    disable_web_page_preview=True,
-                    reply_markup=InlineKeyboardMarkup(btns),
+                to_stream, _ = await ytube.download(
+                    video_id, True, True if vc_type == "video" else False
                 )
-            previous = Config.PLAYER_CACHE.get(chat_id)
-            if previous:
-                try:
-                    await previous.delete()
-                except:
-                    pass
-            Config.PLAYER_CACHE[chat_id] = sent
-            await db.update_songs_count(1)
-            await db.update_user(user_id, "songs_played", 1)
-            chat_name = (await hellbot.app.get_chat(chat_id)).title
-            await hellbot.logit(
-                f"play {vc_type}",
-                f"**⤷ Song:** `{title}` \n**⤷ Chat:** {chat_name} [`{chat_id}`] \n**⤷ User:** {user}",
-            )
-        except Exception as e:
-            raise ChangeVCException(f"[ChangeVCException]: {e}")
-            
+            if not os.path.exists(to_stream):
+                raise ChangeVCException(f"File not found: {to_stream}")
+            if vc_type == "video":
+                input_stream = AudioVideoPiped(
+                    to_stream, MediumQualityAudio(), MediumQualityVideo()
+                )
+            else:
+                input_stream = AudioPiped(to_stream, MediumQualityAudio())
+            try:
+                photo = thumb.generate((359), (297, 302), video_id)
+                await self.music.change_stream(int(chat_id), input_stream)
+                btns = Buttons.player_markup(
+                    chat_id,
+                    "None" if video_id == "telegram" else video_id,
+                    hellbot.app.username,
+                )
+                if photo:
+                    sent = await hellbot.app.send_photo(
+                        int(chat_id),
+                        photo,
+                        TEXTS.PLAYING.format(
+                            hellbot.app.mention,
+                            title,
+                            duration,
+                            user,
+                        ),
+                        reply_markup=InlineKeyboardMarkup(btns),
+                    )
+                    os.remove(photo)
+                else:
+                    sent = await hellbot.app.send_message(
+                        int(chat_id),
+                        TEXTS.PLAYING.format(
+                            hellbot.app.mention,
+                            title,
+                            duration,
+                            user,
+                        ),
+                        disable_web_page_preview=True,
+                        reply_markup=InlineKeyboardMarkup(btns),
+                    )
+                previous = Config.PLAYER_CACHE.get(chat_id)
+                if previous:
+                    try:
+                        await previous.delete()
+                    except:
+                        pass
+                Config.PLAYER_CACHE[chat_id] = sent
+                await db.update_songs_count(1)
+                await db.update_user(user_id, "songs_played", 1)
+                chat_name = (await hellbot.app.get_chat(chat_id)).title
+                await hellbot.logit(
+                    f"play {vc_type}",
+                    f"**⤷ Song:** `{title}` \n**⤷ Chat:** {chat_name} [`{chat_id}`] \n**⤷ User:** {user}",
+                )
+            except Exception as e:
+                raise ChangeVCException(f"[ChangeVCException]: {e}")
+
     async def join_vc(self, chat_id: int, file_path: str, video: bool = False):
         # define input stream
         if video:
