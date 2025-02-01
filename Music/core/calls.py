@@ -350,5 +350,43 @@ class HellMusic(PyTgCalls):
                 except Exception as e:
                     raise UserException(f"[UserException]: {e}")
 
+    async def decorators(self):
+        @self.on_update(filters.chat_update(ChatUpdate.Status.KICKED))
+        async def on_kicked(update: Update):
+            chat_id = update.chat_id
+            await self.leave_vc(chat_id)
+            await db.set_loop(chat_id, 0)
+
+        @self.on_update(filters.chat_update(ChatUpdate.Status.LEFT))
+        async def on_left(update: Update):
+            chat_id = update.chat_id
+            await self.leave_vc(chat_id)
+            await db.set_loop(chat_id, 0)
+
+        @self.on_update(filters.stream_end())
+        async def on_stream_end(update: Update):
+            if isinstance(update, StreamAudioEnded):
+                await self.change_vc(update.chat_id)
+
+        @self.on_update(filters.participants_change())
+        async def on_participants_change(update: Update):
+            try:
+                chat_id = update.chat_id
+                audience = self.audience.get(chat_id)
+                users = await self.vc_participants(chat_id)
+                user_ids = [user.user_id for user in users]
+                if not audience:
+                    await self.autoend(chat_id, user_ids)
+                else:
+                    new = (
+                        audience + 1
+                        if update.user_was_added
+                        else audience - 1
+                    )
+                    self.audience[chat_id] = new
+                    await self.autoend(chat_id, user_ids)
+            except:
+                return
 
 hellmusic = HellMusic()
+hellmusic.decorators()
