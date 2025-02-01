@@ -7,7 +7,7 @@ load_dotenv()
 
 class Config(object):
     # required config variables
-    API_HASH = getenv("API_HASH", None)                # get from my.telegram.org
+    API_HASH = "b35b715fe8dc0a58e8048988286fc5b6"             # get from my.telegram.org
     API_ID = int(getenv("API_ID", 25742938))                  # get from my.telegram.org
     BOT_TOKEN = getenv("BOT_TOKEN", None)              # get from @BotFather
     DATABASE_URL = getenv("DATABASE_URL", None)        # from https://cloud.mongodb.com/
