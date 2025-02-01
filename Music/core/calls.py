@@ -57,7 +57,6 @@ class HellMusic(PyTgCalls):
                 db.inactive[chat_id] = {}
 
     async def autoclean(self, file: str):
-        # dirty way. but works :)
         try:
             os.remove(file)
             os.remove(f"downloads/{file}.webm")
