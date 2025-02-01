@@ -14,6 +14,7 @@ import time
 from typing import Union
 import requests
 import yt_dlp
+from Music.core.logger import LOGS
 from lyricsgenius import Genius
 from youtubesearchpython.__future__ import VideosSearch
 from Music.helpers.strings import TEXTS
