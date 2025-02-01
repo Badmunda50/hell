@@ -2,6 +2,7 @@ import os
 import asyncio
 import yt_dlp
 from time import time
+from config import Config
 from pyrogram import Client, filters
 from pyrogram.types import Message
 from youtube_search import YoutubeSearch
