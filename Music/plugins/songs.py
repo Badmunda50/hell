@@ -138,13 +138,14 @@ class YouTube:
             )
             await hell.delete()
         except Exception as e:
+            LOGS.error(f"Error sending song: {e}")
             await hell.edit_text(f"**Error:**\n`{e}`")
         try:
             Config.SONG_CACHE.pop(rand_key)
             os.remove(thumb)
             os.remove(output)
-        except Exception:
-            pass
+        except Exception as e:
+            LOGS.error(f"Error cleaning up files: {e}")
 
     async def format_link(self, link: str, video_id: bool) -> str:
         link = link.strip()
