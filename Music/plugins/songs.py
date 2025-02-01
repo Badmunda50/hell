@@ -8,6 +8,12 @@ from Music.helpers.formatters import formatter
 from Music.utils.pages import MakePages
 from Music.utils.youtube import ytube
 
+# Import cookies
+import cookies
+
+# Define the COOKIES_FILE variable
+COOKIES_FILE = 'cookies/cookies.txt'
+
 
 @hellbot.app.on_message(filters.command("song") & ~Config.BANNED_USERS)
 @check_mode
@@ -19,7 +25,7 @@ async def songs(_, message: Message):
     hell = await message.reply_photo(
         Config.BLACK_IMG, caption=f"<b><i>Searching</i></b> “`{query}`” ..."
     )
-    all_tracks = await ytube.get_data(query, False, 10)
+    all_tracks = await ytube.get_data(query, False, 10, COOKIES_FILE)
     rand_key = formatter.gen_key(str(message.from_user.id), 5)
     Config.SONG_CACHE[rand_key] = all_tracks
     await MakePages.song_page(hell, rand_key, 0)
@@ -82,10 +88,10 @@ async def song_cb(_, cb: CallbackQuery):
         await cb.answer("You are not allowed to do that!", show_alert=True)
         return
     if action == "adl":
-        await ytube.send_song(cb, rand_key, key, False)
+        await ytube.send_song(cb, rand_key, key, False, COOKIES_FILE)
         return
     elif action == "vdl":
-        await ytube.send_song(cb, rand_key, key, True)
+        await ytube.send_song(cb, rand_key, key, True, COOKIES_FILE)
         return
     elif action == "close":
         Config.SONG_CACHE.pop(rand_key)
@@ -100,4 +106,4 @@ async def song_cb(_, cb: CallbackQuery):
             key = 0
         else:
             key = key + 1 if action == "next" else key - 1
-    await MakePages.song_page(cb, rand_key, key) 6th
+    await MakePages.song_page(cb, rand_key, key)
