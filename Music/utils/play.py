@@ -50,120 +50,120 @@ class Player:
         return url[offset : offset + length]
 
     async def play(self, message: Message, context: dict, edit: bool = True):
-    (
-        chat_id,
-        user_id,
-        duration,
-        file,
-        title,
-        user,
-        video_id,
-        vc_type,
-        force,
-    ) = context.values()
-    if force:
-        await hellmusic.leave_vc(chat_id, True)
-    if video_id == "telegram":
-        file_path = file
-    else:
-        try:
-            if edit:
-                await message.edit_text("Downloading ...")
-            else:
-                await message.reply_text("Downloading ...")
-            file_path, _ = await ytube.download(
-                video_id, True, True if vc_type == "video" else False
-            )
-        except Exception as e:
-            if edit:
-                await message.edit_text(str(e))
-            else:
+        (
+            chat_id,
+            user_id,
+            duration,
+            file,
+            title,
+            user,
+            video_id,
+            vc_type,
+            force,
+        ) = context.values()
+        if force:
+            await hellmusic.leave_vc(chat_id, True)
+        if video_id == "telegram":
+            file_path = file
+        else:
+            try:
+                if edit:
+                    await message.edit_text("Downloading ...")
+                else:
+                    await message.reply_text("Downloading ...")
+                file_path, _ = await ytube.download(
+                    video_id, True, True if vc_type == "video" else False
+                )
+            except Exception as e:
+                if edit:
+                    await message.edit_text(str(e))
+                else:
+                    await message.reply_text(str(e))
+                return
+        position = Queue.put_queue(
+            chat_id,
+            user_id,
+            duration,
+            file_path,
+            title,
+            user,
+            video_id,
+            vc_type,
+            force,
+        )
+        if position == 0:
+            photo = thumb.generate((359), (297, 302), video_id)
+            try:
+                await hellmusic.join_vc(
+                    chat_id, file_path, True if vc_type == "video" else False
+                )
+            except Exception as e:
+                await message.delete()
                 await message.reply_text(str(e))
-            return
-    position = Queue.put_queue(
-        chat_id,
-        user_id,
-        duration,
-        file_path,
-        title,
-        user,
-        video_id,
-        vc_type,
-        force,
-    )
-    if position == 0:
-        photo = thumb.generate((359), (297, 302), video_id)
-        try:
-            await hellmusic.join_vc(
-                chat_id, file_path, True if vc_type == "video" else False
-            )
-        except Exception as e:
-            await message.delete()
-            await message.reply_text(str(e))
-            Queue.clear_queue(chat_id)
-            os.remove(file_path)
+                Queue.clear_queue(chat_id)
+                os.remove(file_path)
+                if photo:
+                    os.remove(photo)
+                return
+            btns = Buttons.player_markup(chat_id, video_id, hellbot.app.username)
             if photo:
+                sent = await hellbot.app.send_photo(
+                    chat_id,
+                    photo,
+                    TEXTS.PLAYING.format(
+                        hellbot.app.mention,
+                        title,
+                        duration,
+                        user,
+                    ),
+                    reply_markup=InlineKeyboardMarkup(btns),
+                )
                 os.remove(photo)
-            return
-        btns = Buttons.player_markup(chat_id, video_id, hellbot.app.username)
-        if photo:
-            sent = await hellbot.app.send_photo(
-                chat_id,
-                photo,
-                TEXTS.PLAYING.format(
-                    hellbot.app.mention,
-                    title,
-                    duration,
-                    user,
-                ),
-                reply_markup=InlineKeyboardMarkup(btns),
-            )
-            os.remove(photo)
+            else:
+                sent = await hellbot.app.send_message(
+                    chat_id,
+                    TEXTS.PLAYING.format(
+                        hellbot.app.mention,
+                        title,
+                        duration,
+                        user,
+                    ),
+                    reply_markup=InlineKeyboardMarkup(btns),
+                )
+            previous = Config.PLAYER_CACHE.get(chat_id)
+            if previous:
+                try:
+                    await previous.delete()
+                except Exception:
+                    pass
+            Config.PLAYER_CACHE[chat_id] = sent
         else:
             sent = await hellbot.app.send_message(
                 chat_id,
-                TEXTS.PLAYING.format(
-                    hellbot.app.mention,
+                TEXTS.QUEUE.format(
+                    position,
                     title,
                     duration,
                     user,
                 ),
-                reply_markup=InlineKeyboardMarkup(btns),
+                reply_markup=InlineKeyboardMarkup(Buttons.close_markup()),
             )
-        previous = Config.PLAYER_CACHE.get(chat_id)
-        if previous:
-            try:
-                await previous.delete()
-            except Exception:
-                pass
-        Config.PLAYER_CACHE[chat_id] = sent
-    else:
-        sent = await hellbot.app.send_message(
-            chat_id,
-            TEXTS.QUEUE.format(
-                position,
-                title,
-                duration,
-                user,
-            ),
-            reply_markup=InlineKeyboardMarkup(Buttons.close_markup()),
+            prev_q = Config.QUEUE_CACHE.get(chat_id)
+            if prev_q:
+                try:
+                    await prev_q.delete()
+                except Exception:
+                    pass
+            Config.QUEUE_CACHE[chat_id] = sent
+            return await message.delete()
+        await message.delete()
+        await db.update_songs_count(1)
+        await db.update_user(user_id, "songs_played", 1)
+        chat_name = (await hellbot.app.get_chat(chat_id)).title
+        await hellbot.logit(
+            f"play {vc_type}",
+            f"**⤷ Song:** `{title}` \n**⤷ Chat:** {chat_name} [`{chat_id}`] \n**⤷ User:** {user}",
         )
-        prev_q = Config.QUEUE_CACHE.get(chat_id)
-        if prev_q:
-            try:
-                await prev_q.delete()
-            except Exception:
-                pass
-        Config.QUEUE_CACHE[chat_id] = sent
-        return await message.delete()
-    await message.delete()
-    await db.update_songs_count(1)
-    await db.update_user(user_id, "songs_played", 1)
-    chat_name = (await hellbot.app.get_chat(chat_id)).title
-    await hellbot.logit(
-        f"play {vc_type}",
-        f"**⤷ Song:** `{title}` \n**⤷ Chat:** {chat_name} [`{chat_id}`] \n**⤷ User:** {user}",
-    )
 
     async def skip(self, chat_id: int, message: Message):
         await message.edit_text("Skipping ...")
