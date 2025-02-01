@@ -16,6 +16,16 @@ from Music.helpers.buttons import Buttons
 from Music.utils.leaderboard import leaders
 from Music.utils.queue import Queue
 
+from ntgcalls import StreamType
+from pytgcalls import PyTgCalls
+from pytgcalls.exceptions import (
+    AlreadyJoinedError,
+    NoActiveGroupCall,
+)
+from pytgcalls.types import (
+    AudioQuality, 
+    VideoQuality,
+)
 
 @hellbot.app.on_message(filters.private, group=2)
 async def new_users(_, msg: Message):
