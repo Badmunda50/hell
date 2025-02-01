@@ -115,7 +115,10 @@ async def decorators():
         except:
             return
 
-await decorators()
+async def main():
+    await decorators()
+
+asyncio.create_task(main())
 
 
 async def update_played():
