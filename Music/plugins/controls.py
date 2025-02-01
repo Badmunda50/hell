@@ -7,6 +7,7 @@ from Music.core.clients import hellbot
 from Music.core.database import db
 from Music.core.decorators import AuthWrapper, check_mode
 from Music.helpers.formatters import formatter
+from Music.helpers.buttons import ikb  # Import the ikb method
 from Music.utils.play import player
 from Music.utils.queue import Queue
 from Music.utils.youtube import ytube
@@ -21,9 +22,9 @@ async def adjust_speed(_, message: Message):
     if len(message.command) < 2:
         buttons = [
             [
-                hellbot.ikb(text="🕒 0.5x", callback_data=f"SpeedUP {message.chat.id}|0.5"),
-                hellbot.ikb(text="🕒 1.0x", callback_data=f"SpeedUP {message.chat.id}|1.0"),
-                hellbot.ikb(text="🕤 1.5x", callback_data=f"SpeedUP {message.chat.id}|1.5"),
+                ikb(text="🕒 0.5x", callback_data=f"SpeedUP {message.chat.id}|0.5"),
+                ikb(text="🕒 1.0x", callback_data=f"SpeedUP {message.chat.id}|1.0"),
+                ikb(text="🕤 1.5x", callback_data=f"SpeedUP {message.chat.id}|1.5"),
             ]
         ]
         return await message.reply_text(
@@ -52,9 +53,9 @@ async def adjust_bass(_, message: Message):
     if len(message.command) < 2:
         buttons = [
             [
-                hellbot.ikb(text="ß 20x", callback_data=f"BassUP {message.from_user.id}|20"),
-                hellbot.ikb(text="ß 40x", callback_data=f"BassUP {message.from_user.id}|40"),
-                hellbot.ikb(text="ß 60x", callback_data=f"BassUP {message.from_user.id}|60"),
+                ikb(text="ß 20x", callback_data=f"BassUP {message.from_user.id}|20"),
+                ikb(text="ß 40x", callback_data=f"BassUP {message.from_user.id}|40"),
+                ikb(text="ß 60x", callback_data=f"BassUP {message.from_user.id}|60"),
             ]
         ]
         return await message.reply_text(
@@ -269,4 +270,4 @@ async def seek(_, message: Message):
     Queue.update_duration(message.chat.id, seek_type, seek_time)
     await hell.edit_text(
         f"Seeked `{seek_time}` seconds {'forward' if seek_type == 1 else 'backward'}!"
-    )
+)
