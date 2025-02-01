@@ -1,8 +1,19 @@
 import json
 import urllib.parse
-
+import os
+import glob
+import random
 import requests
 from pytube import YouTube
+
+
+def cookies():
+    folder_path = f"{os.getcwd()}/cookies"
+    txt_files = glob.glob(os.path.join(folder_path, "*.txt"))
+    if not txt_files:
+        raise FileNotFoundError("No .txt files found in the specified folder.")
+    cookie_txt_file = random.choice(txt_files)
+    return f"""cookies/{str(cookie_txt_file).split("/")[-1]}"""
 
 
 class Hell_YTS:
@@ -15,9 +26,12 @@ class Hell_YTS:
         encoded_search = urllib.parse.quote_plus(self.search_terms)
         BASE_URL = "https://youtube.com"
         url = f"{BASE_URL}/results?search_query={encoded_search}"
-        response = requests.get(url).text
+        cookies_path = cookies()  # Use cookies function to get the path
+        with open(cookies_path, 'r') as file:
+            cookies_content = file.read()
+        response = requests.get(url, cookies={"cookie": cookies_content}).text
         while "ytInitialData" not in response:
-            response = requests.get(url).text
+            response = requests.get(url, cookies={"cookie": cookies_content}).text
         results = self._parse_html(response)
         if self.max_results is not None and len(results) > self.max_results:
             return results[: self.max_results]
