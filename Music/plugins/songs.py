@@ -1,5 +1,5 @@
 from pyrogram import filters
-from pyrogram.types import CallbackQuery, Message
+from pyrogram.types import CallbackQuery, Message, InlineKeyboardMarkup, InlineKeyboardButton
 
 from config import Config
 from Music.core.clients import hellbot
@@ -17,11 +17,39 @@ import yt_dlp
 from Music.core.logger import LOGS
 from lyricsgenius import Genius
 from youtubesearchpython.__future__ import VideosSearch
+from youtube_search import YoutubeSearch
 from Music.helpers.strings import TEXTS
 
 
 # Define the COOKIES_FILE variable
 COOKIES_FILE = 'cookies/cookies.txt'
+
+# Define a dictionary to track the last message timestamp for each user
+user_last_message_time = {}
+user_command_count = {}
+
+# Define the threshold for command spamming (e.g., 2 commands within 5 seconds)
+SPAM_THRESHOLD = 2
+SPAM_WINDOW_SECONDS = 5
+
+# Quality options for songs
+SONG_QUALITY_OPTIONS = {
+    'low': 'worstaudio',
+    'medium': 'bestaudio[ext=m4a]',
+    'high': 'bestaudio'
+}
+
+# Quality options for videos
+VIDEO_QUALITY_OPTIONS = {
+    '144p': '144',
+    '240p': '240',
+    '360p': '360',
+    '480p': '480',
+    '720p': '720',
+    '1080p': '1080',
+    '1440p': '1440',
+    '2160p': '2160',
+}
 
 async def shell_cmd(cmd):
     proc = await asyncio.create_subprocess_shell(
@@ -83,7 +111,6 @@ class YouTube:
             }
             collection.append(context)
         return collection[:limit]
-
 
     async def send_song(self, message: CallbackQuery, rand_key: str, key: int, video: bool = False, cookies_file: str = None) -> dict:
         track = Config.SONG_CACHE[rand_key][key]
@@ -156,7 +183,7 @@ class YouTube:
                 os.remove(output)
         except Exception as e:
             LOGS.error(f"Error cleaning up files: {e}")
-            
+
     async def format_link(self, link: str, video_id: bool) -> str:
         link = link.strip()
         if video_id:
@@ -167,46 +194,188 @@ class YouTube:
 
 ytube = YouTube()
 
+async def send_quality_buttons(message: Message, query: str, type: str, thumbnail: str, sizes: list):
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton(f"{size} MB", callback_data=f"{type}_{query}_{index}")]
+        for index, size in enumerate(sizes)
+    ])
+    await message.reply_photo(photo=thumbnail, caption="ꜱᴇʟᴇᴄᴛ Qᴜᴀʟɪᴛʏ ᴍᴘ3:", reply_markup=keyboard)
+
+async def send_video_quality_buttons(message: Message, query: str, thumbnail: str):
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton(f"144p", callback_data=f"video_{query}_144p"), 
+         InlineKeyboardButton(f"240p", callback_data=f"video_{query}_240p"),
+         InlineKeyboardButton(f"360p", callback_data=f"video_{query}_360p")],
+        [InlineKeyboardButton(f"480p", callback_data=f"video_{query}_480p"), 
+         InlineKeyboardButton(f"720p", callback_data=f"video_{query}_720p"),
+         InlineKeyboardButton(f"1080p", callback_data=f"video_{query}_1080p")],
+        [InlineKeyboardButton(f"1440p", callback_data=f"video_{query}_1440p"), 
+         InlineKeyboardButton(f"2160p", callback_data=f"video_{query}_2160p")]
+    ])
+    await message.reply_photo(photo=thumbnail, caption="ꜱᴇʟᴇᴄᴛ Qᴜᴀʟɪᴛʏ ᴍᴘ4:", reply_markup=keyboard)
+
 @hellbot.app.on_message(filters.command("song") & ~Config.BANNED_USERS)
 @check_mode
 @UserWrapper
 async def songs(_, message: Message):
-    if len(message.command) == 1:
-        return await message.reply_text("Nothing given to search.")
-    query = message.text.split(None, 1)[1]
-    hell = await message.reply_photo(
-        Config.BLACK_IMG, caption=f"<b><i>Searching</i></b> “`{query}`” ..."
-    )
-    all_tracks = await ytube.get_data(query, False, 10, COOKIES_FILE)
-    rand_key = formatter.gen_key(str(message.from_user.id), 5)
-    Config.SONG_CACHE[rand_key] = all_tracks
-    await MakePages.song_page(hell, rand_key, 0)
-
-@hellbot.app.on_callback_query(filters.regex(r"song_dl(.*)$") & ~Config.BANNED_USERS)
-async def song_cb(_, cb: CallbackQuery):
-    _, action, key, rand_key = cb.data.split("|")
-    user = rand_key.split("_")[0]
-    key = int(key)
-    if cb.from_user.id != int(user):
-        await cb.answer("You are not allowed to do that!", show_alert=True)
-        return
-    if action == "adl":
-        await ytube.send_song(cb, rand_key, key, False, COOKIES_FILE)
-        return
-    elif action == "vdl":
-        await ytube.send_song(cb, rand_key, key, True, COOKIES_FILE)
-        return
-    elif action == "close":
-        Config.SONG_CACHE.pop(rand_key)
-        await cb.message.delete()
-        return
+    user_id = message.from_user.id
+    current_time = time()
+    
+    # Spam protection: Prevent multiple commands within a short time
+    last_message_time = user_last_message_time.get(user_id, 0)
+    if current_time - last_message_time < SPAM_WINDOW_SECONDS:
+        user_last_message_time[user_id] = current_time
+        user_command_count[user_id] = user_command_count.get(user_id, 0) + 1
+        if user_command_count[user_id] > SPAM_THRESHOLD:
+            hu = await message.reply_text(f"**{message.from_user.mention} ᴘʟᴇᴀsᴇ ᴅᴏɴᴛ ᴅᴏ sᴘᴀᴍ, ᴀɴᴅ ᴛʀʏ ᴀɢᴀɪɴ ᴀғᴛᴇʀ 5 sᴇᴄ**")
+            await asyncio.sleep(3)
+            await hu.delete()
+            return
     else:
-        all_tracks = Config.SONG_CACHE[rand_key]
-        length = len(all_tracks)
-        if key == 0 and action == "prev":
-            key = length - 1
-        elif key == length - 1 and action == "next":
-            key = 0
+        user_command_count[user_id] = 1
+        user_last_message_time[user_id] = current_time
+    
+    query = " ".join(message.command[1:])
+    if not query:
+        await message.reply("Please provide a song name or URL to search for.")
+        return
+
+    await message.delete()
+
+    results = YoutubeSearch(query, max_results=1).to_dict()
+    if not results:
+        await message.reply("⚠️ No results found. Please make sure you typed the correct name.")
+        return
+
+    thumbnail = results[0]["thumbnails"][0]
+    
+    sizes = []
+    for quality in SONG_QUALITY_OPTIONS.values():
+        ydl_opts = {
+            "format": quality,
+            "noplaylist": True,
+            "quiet": True,
+            "logtostderr": False,
+            "cookiefile": COOKIES_FILE,
+        }
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info_dict = ydl.extract_info(f"https://youtube.com{results[0]['url_suffix']}", download=False)
+            size = info_dict.get('filesize') or info_dict.get('filesize_approx') or 0
+            sizes.append(size / (1024 * 1024))
+
+    await send_quality_buttons(message, query, 'song', thumbnail, [f"{size:.2f}" for size in sizes])
+
+@hellbot.app.on_message(filters.command("video") & ~Config.BANNED_USERS)
+@check_mode
+@UserWrapper
+async def download_video(_, message: Message):
+    user_id = message.from_user.id
+    current_time = time()
+    
+    last_message_time = user_last_message_time.get(user_id, 0)
+    if current_time - last_message_time < SPAM_WINDOW_SECONDS:
+        user_last_message_time[user_id] = current_time
+        user_command_count[user_id] = user_command_count.get(user_id, 0) + 1
+        if user_command_count[user_id] > SPAM_THRESHOLD:
+            hu = await message.reply_text(f"**{message.from_user.mention} ᴘʟᴇᴀsᴇ ᴅᴏɴᴛ ᴅᴏ sᴘᴀᴍ, ᴀɴᴅ ᴛʀʏ ᴀɢᴀɪɴ ᴀғᴛᴇʀ 5 sᴇᴄ**")
+            await asyncio.sleep(3)
+            await hu.delete()
+            return
+    else:
+        user_command_count[user_id] = 1
+        user_last_message_time[user_id] = current_time
+    
+    query = " ".join(message.command[1:])
+    if not query:
+        await message.reply("Please provide a video name or URL to search for.")
+        return
+
+    await message.delete()
+
+    results = YoutubeSearch(query, max_results=1).to_dict()
+    if not results:
+        await message.reply("⚠️ No results found. Please make sure you typed the correct name.")
+        return
+
+    thumbnail = results[0]["thumbnails"][0]
+    
+    await send_video_quality_buttons(message, query, thumbnail)
+
+@hellbot.app.on_callback_query(filters.regex(r"^(song|video)_(.+)_(\d+)$"))
+async def callback_query_handler(client, query):
+    type, query_text, quality_index = query.data.split("_")
+    
+    if type == "song":
+        quality = list(SONG_QUALITY_OPTIONS.values())[int(quality_index)]
+        ydl_opts = {
+            "format": quality,
+            "postprocessors": [{
+                "key": "FFmpegExtractAudio",
+                "preferredcodec": "mp3",
+                "preferredquality": "192",
+            }],
+            "noplaylist": True,
+            "quiet": True,
+            "logtostderr": False,
+            "cookiefile": COOKIES_FILE,
+        }
+    else:
+        quality = list(VIDEO_QUALITY_OPTIONS.values())[int(quality_index)]
+        ydl_opts = {
+            "format": f"bestvideo[ext=mp4][height<={quality}]+bestaudio/best[ext=mp4][height<={quality}]",
+            "noplaylist": True,
+            "quiet": True,
+            "logtostderr": False,
+            "cookiefile": COOKIES_FILE,
+        }
+
+    try:
+        m = await query.message.reply("🔄 **Searching...**")
+        results = YoutubeSearch(query_text, max_results=1).to_dict()
+        if not results:
+            await m.edit("**⚠️ No results found. Please make sure you typed the correct name.**")
+            return
+
+        link = f"https://youtube.com{results[0]['url_suffix']}"
+        title = results[0]["title"]
+        thumbnail = results[0]["thumbnails"][0]
+        thumb_name = f"{title}.jpg"
+        
+        thumb = requests.get(thumbnail, allow_redirects=True)
+        open(thumb_name, "wb").write(thumb.content)
+        duration = results[0]["duration"]
+        views = results[0]["views"]
+        channel_name = results[0]["channel"]
+
+        await m.edit("📥 **Downloading...**")
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info_dict = ydl.extract_info(link, download=False)
+            file = ydl.prepare_filename(info_dict)
+            ydl.download([link])
+
+        dur = sum(int(x) * 60 ** i for i, x in enumerate(reversed(duration.split(":"))))
+        
+        await m.edit("📤 **Uploading...**")
+        if type == "song":
+            await query.message.reply_audio(
+                file,
+                thumb=thumb_name,
+                title=title,
+                caption=f"{title}\nRequested by ➪ {query.from_user.mention}\nViews ➪ {views}\nChannel ➪ {channel_name}",
+                duration=dur
+            )
         else:
-            key = key + 1 if action == "next" else key - 1
-    await MakePages.song_page(cb, rand_key, key)
+            await query.message.reply_video(
+                file,
+                thumb=thumb_name,
+                caption=f"{title}\nRequested by ➪ {query.from_user.mention}\nViews ➪ {views}\nChannel ➪ {channel_name}",
+                duration=dur
+            )
+
+        os.remove(file)
+        os.remove(thumb_name)
+        await m.delete()
+
+    except Exception as e:
+        await m.edit("⚠️ **An error occurred!**")
+        print(f"Error: {str(e)}")
