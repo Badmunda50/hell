@@ -84,6 +84,7 @@ class YouTube:
             collection.append(context)
         return collection[:limit]
 
+
     async def send_song(self, message: CallbackQuery, rand_key: str, key: int, video: bool = False, cookies_file: str = None) -> dict:
         track = Config.SONG_CACHE[rand_key][key]
         ydl_opts = self.video_opts if video else self.audio_opts
@@ -101,37 +102,43 @@ class YouTube:
                 if not video:
                     output = ydl.prepare_filename(yt_file)
                     ydl.process_info(yt_file)
-                    await message.message.reply_audio(
-                        audio=output,
-                        caption=TEXTS.SONG_CAPTION.format(
-                            track["title"],
-                            track["link"],
-                            track["views"],
-                            track["duration"],
-                            message.from_user.mention,
-                            hellbot.app.mention,
-                        ),
-                        duration=int(yt_file["duration"]),
-                        performer=TEXTS.PERFORMER,
-                        title=yt_file["title"],
-                        thumb=thumb,
-                    )
+                    if os.path.exists(output):
+                        await message.message.reply_audio(
+                            audio=output,
+                            caption=TEXTS.SONG_CAPTION.format(
+                                track["title"],
+                                track["link"],
+                                track["views"],
+                                track["duration"],
+                                message.from_user.mention,
+                                hellbot.app.mention,
+                            ),
+                            duration=int(yt_file["duration"]),
+                            performer=TEXTS.PERFORMER,
+                            title=yt_file["title"],
+                            thumb=thumb,
+                        )
+                    else:
+                        raise ValueError(f"Failed to decode {output}. The file does not exist.")
                 else:
                     output = f"{yt_file['id']}.mp4"
-                    await message.message.reply_video(
-                        video=output,
-                        caption=TEXTS.SONG_CAPTION.format(
-                            track["title"],
-                            track["link"],
-                            track["views"],
-                            track["duration"],
-                            message.from_user.mention,
-                            hellbot.app.mention,
-                        ),
-                        duration=int(yt_file["duration"]),
-                        thumb=thumb,
-                        supports_streaming=True,
-                    )
+                    if os.path.exists(output):
+                        await message.message.reply_video(
+                            video=output,
+                            caption=TEXTS.SONG_CAPTION.format(
+                                track["title"],
+                                track["link"],
+                                track["views"],
+                                track["duration"],
+                                message.from_user.mention,
+                                hellbot.app.mention,
+                            ),
+                            duration=int(yt_file["duration"]),
+                            thumb=thumb,
+                            supports_streaming=True,
+                        )
+                    else:
+                        raise ValueError(f"Failed to decode {output}. The file does not exist.")
             chat = message.message.chat.title or message.message.chat.first_name
             await hellbot.logit(
                 "Video" if video else "Audio",
@@ -143,11 +150,13 @@ class YouTube:
             await hell.edit_text(f"**Error:**\n`{e}`")
         try:
             Config.SONG_CACHE.pop(rand_key)
-            os.remove(thumb)
-            os.remove(output)
+            if os.path.exists(thumb):
+                os.remove(thumb)
+            if output and os.path.exists(output):
+                os.remove(output)
         except Exception as e:
             LOGS.error(f"Error cleaning up files: {e}")
-
+            
     async def format_link(self, link: str, video_id: bool) -> str:
         link = link.strip()
         if video_id:
