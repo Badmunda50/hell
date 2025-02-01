@@ -12,6 +12,10 @@ from config import Config, all_vars
 from Music.core.clients import hellbot
 from Music.core.database import db
 
+def god_users_filter(_, __, message: Message):
+    return message.from_user and message.from_user.id in Config.GOD_USERS
+
+god_users = filters.create(god_users_filter)
 
 async def aexec(code, client, message):
     exec(
@@ -20,8 +24,7 @@ async def aexec(code, client, message):
     )
     return await locals()["__aexec"](client, message)
 
-
-@hellbot.app.on_message(filters.command(["eval", "run"]) & filters.user(Config.GOD_USERS))
+@hellbot.app.on_message(filters.command(["eval", "run"]) & god_users)
 async def eval(_, message: Message):
     hell = await message.reply_text("Processing ...")
     lists = message.text.split(" ", 1)
@@ -66,10 +69,7 @@ async def eval(_, message: Message):
         await reply_to.reply_text(final_output)
     await hell.delete()
 
-
-@hellbot.app.on_message(
-    filters.command(["exec", "term", "sh", "shh"]) & filters.user(Config.GOD_USERS)
-)
+@hellbot.app.on_message(filters.command(["exec", "term", "sh", "shh"]) & god_users)
 async def term(_, message: Message):
     hell = await message.reply_text("Processing ...")
     lists = message.text.split(" ", 1)
@@ -122,8 +122,7 @@ async def term(_, message: Message):
     else:
         await hell.edit("**Output:**\n`No Output`")
 
-
-@hellbot.app.on_message(filters.command(["getvar", "gvar", "var"]) & filters.user(Config.GOD_USERS))
+@hellbot.app.on_message(filters.command(["getvar", "gvar", "var"]) & god_users)
 async def varget_(_, message: Message):
     if len(message.command) != 2:
         return await message.reply_text("Give a variable name to get its value.")
@@ -136,8 +135,7 @@ async def varget_(_, message: Message):
     else:
         return await message.reply_text(f"**{check_var}:** `{str(output)}`")
 
-
-@hellbot.app.on_message(filters.command("addsudo") & filters.user(Config.GOD_USERS))
+@hellbot.app.on_message(filters.command("addsudo") & god_users)
 async def useradd(_, message: Message):
     if not message.reply_to_message:
         if len(message.command) != 2:
@@ -171,8 +169,7 @@ async def useradd(_, message: Message):
         await message.reply_text("Failed to add sudo user.")
     return
 
-
-@hellbot.app.on_message(filters.command(["delsudo", "rmsudo"]) & filters.user(Config.GOD_USERS))
+@hellbot.app.on_message(filters.command(["delsudo", "rmsudo"]) & god_users)
 async def userdel(_, message: Message):
     if not message.reply_to_message:
         if len(message.command) != 2:
