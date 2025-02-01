@@ -13,7 +13,7 @@ class Config(object):
     DATABASE_URL = "mongodb+srv://BADMUNDA:BADMYDAD@badhacker.i5nw9na.mongodb.net/"     # from https://cloud.mongodb.com/
     HELLBOT_SESSION = "BQGIzloAr4p6_F7Pio7Jirj1-_ry579AlrwJaurALELnkENhuRsZoZm4wEaKI6jlp5kSkFURVPDLzWVwy25Kp8OF0VhuWufeItruEenA9S6hl0EgJmmhz5ZVyMtLLt8dwc15tG-bUEKYUQo_lOE1R9xU8h0CLIlRrkuXG4yaDbz5Hly-kyqYRM69oOUqzQ1J234_n3K-6a55uZvOZSyd2hjKW4kh9LzHAcaYptaNqOnrP1cwogr8Cs7gOl02cohpIfPvKQ6UmSa2-HBScwsdW5Yypv3LUWJx96AHTCNliNy6OG6gwJbCchBNFfNdwZQ2Vu7tpxp52hsoP7IpkP_5RIWSU4lecQAAAAGyMKeQAA"  # enter your session string here
     LOGGER_ID = -1002093247039         # make a channel and get its ID
-    OWNER_ID = 7009601543              # enter your id here
+    OWNER_ID = getenv("OWNER_ID", "7009601543")              # enter your id here
 
     # optional config variables
     BLACK_IMG = getenv("BLACK_IMG", "https://telegra.ph/file/2c546060b20dfd7c1ff2d.jpg")        # black image for progress
