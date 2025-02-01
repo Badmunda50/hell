@@ -77,20 +77,20 @@ async def vc_end(_, msg: Message):
     await msg.continue_propagation()
 
 
-@hellmusic.music.on_kicked()
-@hellmusic.music.on_left()
+@hellmusic.on_kicked()
+@hellmusic.on_left()
 async def end_streaming(_, chat_id: int):
     await hellmusic.leave_vc(chat_id)
     await db.set_loop(chat_id, 0)
 
 
-@hellmusic.music.on_stream_end()
+@hellmusic.on_stream_end()
 async def changed(_, update: Update):
     if isinstance(update, StreamAudioEnded):
         await hellmusic.change_vc(update.chat_id)
 
 
-@hellmusic.music.on_participants_change()
+@hellmusic.on_participants_change()
 async def members_change(_, update: Update):
     try:
         chat_id = update.chat_id
