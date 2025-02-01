@@ -8,9 +8,6 @@ from Music.helpers.formatters import formatter
 from Music.utils.pages import MakePages
 from Music.utils.youtube import ytube
 
-import yt_dlp
-
-COOKIES_FILE = 'cookies/cookies.txt'
 
 @hellbot.app.on_message(filters.command("song") & ~Config.BANNED_USERS)
 @check_mode
@@ -22,15 +19,11 @@ async def songs(_, message: Message):
     hell = await message.reply_photo(
         Config.BLACK_IMG, caption=f"<b><i>Searching</i></b> “`{query}`” ..."
     )
-    ydl_opts = {
-        'cookiefile': COOKIES_FILE,
-    }
-    all_tracks = await ytube.get_data(query, False, 10, ydl_opts)
+    all_tracks = await ytube.get_data(query, False, 10)
     rand_key = formatter.gen_key(str(message.from_user.id), 5)
     Config.SONG_CACHE[rand_key] = all_tracks
     await MakePages.song_page(hell, rand_key, 0)
 
-# Modify ytube.py methods to accept ydl_opts and pass it to yt_dlp
 
 @hellbot.app.on_message(filters.command("lyrics") & ~Config.BANNED_USERS)
 @check_mode
@@ -107,4 +100,4 @@ async def song_cb(_, cb: CallbackQuery):
             key = 0
         else:
             key = key + 1 if action == "next" else key - 1
-    await MakePages.song_page(cb, rand_key, key)
+    await MakePages.song_page(cb, rand_key, key) 6th
