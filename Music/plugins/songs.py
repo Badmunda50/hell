@@ -219,7 +219,7 @@ async def send_video_quality_buttons(message: Message, query: str, thumbnail: st
 @UserWrapper
 async def songs(_, message: Message):
     user_id = message.from_user.id
-    current_time = time()
+    current_time = time.time()
     
     # Spam protection: Prevent multiple commands within a short time
     last_message_time = user_last_message_time.get(user_id, 0)
@@ -270,7 +270,7 @@ async def songs(_, message: Message):
 @UserWrapper
 async def download_video(_, message: Message):
     user_id = message.from_user.id
-    current_time = time()
+    current_time = time.time()
     
     last_message_time = user_last_message_time.get(user_id, 0)
     if current_time - last_message_time < SPAM_WINDOW_SECONDS:
