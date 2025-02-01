@@ -44,7 +44,7 @@ class MakeButtons:
     ):
         btns = []
         txt = ""
-        d = 0 if delete == True else 1
+        d = 0 if delete else 1
         if len(collection) != 1:
             nav_btns = [
                 [
@@ -147,37 +147,37 @@ class MakeButtons:
 
     def controls_markup(self, video_id, chat_id, user_id):
         buttons = [
-        [
-            self.ikb(text="⟲", callback_data=f"ctrl|bseek|{chat_id}"),
-            self.ikb(text="⦿", callback_data=f"ctrl|play|{chat_id}"),
-            self.ikb(text="⟳", callback_data=f"ctrl|fseek|{chat_id}"),
-        ],
-        [
-            self.ikb(text="⊡ End", callback_data=f"ctrl|end|{chat_id}"),
-            self.ikb(text="↻ Replay", callback_data=f"ctrl|replay|{chat_id}"),
-            self.ikb(text="∞ Loop", callback_data=f"ctrl|loop|{chat_id}"),
-        ],
-        [
-            self.ikb(text="⊝ Mute", callback_data=f"ctrl|mute|{chat_id}"),
-            self.ikb(text="⊜ Unmute", callback_data=f"ctrl|unmute|{chat_id}"),
-            self.ikb(text="⊹ Skip", callback_data=f"ctrl|skip|{chat_id}"),
-        ],
-        [
-            self.ikb(text="🕒 0.5x", callback_data=f"SpeedUP {chat_id}|0.5"),
-            self.ikb(text="🕒 1.0x", callback_data=f"SpeedUP {chat_id}|1.0"),
-            self.ikb(text="🕤 1.5x", callback_data=f"SpeedUP {chat_id}|1.5"),
-        ],
-        [
-            self.ikb(text="ß 20×", callback_data=f"BassUP {user_id}|20"),
-            self.ikb(text="ß 40×", callback_data=f"BassUP {user_id}|40"),
-            self.ikb(text="ß 60×", callback_data=f"BassUP {user_id}|60"),
-        ],
-        [
-            self.ikb(text="🔙", callback_data=f"player|{video_id}|{chat_id}"),
-            self.ikb(text="🗑", callback_data="close"),
-        ],
-    ]
-       return buttons
+            [
+                self.ikb(text="⟲", callback_data=f"ctrl|bseek|{chat_id}"),
+                self.ikb(text="⦿", callback_data=f"ctrl|play|{chat_id}"),
+                self.ikb(text="⟳", callback_data=f"ctrl|fseek|{chat_id}"),
+            ],
+            [
+                self.ikb(text="⊡ End", callback_data=f"ctrl|end|{chat_id}"),
+                self.ikb(text="↻ Replay", callback_data=f"ctrl|replay|{chat_id}"),
+                self.ikb(text="∞ Loop", callback_data=f"ctrl|loop|{chat_id}"),
+            ],
+            [
+                self.ikb(text="⊝ Mute", callback_data=f"ctrl|mute|{chat_id}"),
+                self.ikb(text="⊜ Unmute", callback_data=f"ctrl|unmute|{chat_id}"),
+                self.ikb(text="⊹ Skip", callback_data=f"ctrl|skip|{chat_id}"),
+            ],
+            [
+                self.ikb(text="🕒 0.5x", callback_data=f"SpeedUP {chat_id}|0.5"),
+                self.ikb(text="🕒 1.0x", callback_data=f"SpeedUP {chat_id}|1.0"),
+                self.ikb(text="🕤 1.5x", callback_data=f"SpeedUP {chat_id}|1.5"),
+            ],
+            [
+                self.ikb(text="ß 20×", callback_data=f"BassUP {user_id}|20"),
+                self.ikb(text="ß 40×", callback_data=f"BassUP {user_id}|40"),
+                self.ikb(text="ß 60×", callback_data=f"BassUP {user_id}|60"),
+            ],
+            [
+                self.ikb(text="🔙", callback_data=f"player|{video_id}|{chat_id}"),
+                self.ikb(text="🗑", callback_data="close"),
+            ],
+        ]
+        return buttons
 
     def song_markup(self, rand_key, url, key):
         buttons = [
