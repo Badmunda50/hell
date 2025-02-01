@@ -22,7 +22,7 @@ COOKIES_FILE = 'cookies/cookies.txt'
 
 
 # Command to search and download song
-@hellbot.app.on_message(filters.command("song") & ~Config.BANNED_USERS)
+@app.on_message(filters.command("song") & ~Config.BANNED_USERS)
 @check_mode
 @UserWrapper
 async def songs(_, message: Message):
