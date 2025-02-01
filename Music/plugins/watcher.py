@@ -4,8 +4,7 @@ import datetime
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from pyrogram import filters
 from pyrogram.types import Message
-from pytgcalls.types import JoinedGroupCallParticipant, LeftGroupCallParticipant, Update
-from pytgcalls.types.stream import StreamAudioEnded
+from pytgcalls.types import Update, StreamAudioEnded
 
 from config import Config
 from Music.core.calls import hellmusic
@@ -93,10 +92,6 @@ async def changed(_, update: Update):
 
 @hellmusic.music.on_participants_change()
 async def members_change(_, update: Update):
-    if not isinstance(update, JoinedGroupCallParticipant) and not isinstance(
-        update, LeftGroupCallParticipant
-    ):
-        return
     try:
         chat_id = update.chat_id
         audience = hellmusic.audience.get(chat_id)
@@ -107,7 +102,7 @@ async def members_change(_, update: Update):
         else:
             new = (
                 audience + 1
-                if isinstance(update, JoinedGroupCallParticipant)
+                if update.user_was_added
                 else audience - 1
             )
             hellmusic.audience[chat_id] = new
