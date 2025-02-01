@@ -21,7 +21,7 @@ async def aexec(code, client, message):
     return await locals()["__aexec"](client, message)
 
 
-@hellbot.app.on_message(filters.command(["eval", "run"]) & Config.GOD_USERS)
+@hellbot.app.on_message(filters.command(["eval", "run"]) & filters.user(Config.GOD_USERS))
 async def eval(_, message: Message):
     hell = await message.reply_text("Processing ...")
     lists = message.text.split(" ", 1)
@@ -68,7 +68,7 @@ async def eval(_, message: Message):
 
 
 @hellbot.app.on_message(
-    filters.command(["exec", "term", "sh", "shh"]) & Config.GOD_USERS
+    filters.command(["exec", "term", "sh", "shh"]) & filters.user(Config.GOD_USERS)
 )
 async def term(_, message: Message):
     hell = await message.reply_text("Processing ...")
@@ -123,21 +123,21 @@ async def term(_, message: Message):
         await hell.edit("**Output:**\n`No Output`")
 
 
-@hellbot.app.on_message(filters.command(["getvar", "gvar", "var"]) & Config.GOD_USERS)
+@hellbot.app.on_message(filters.command(["getvar", "gvar", "var"]) & filters.user(Config.GOD_USERS))
 async def varget_(_, message: Message):
     if len(message.command) != 2:
-        return await message.reply_text("Give a variable name to get it's value.")
+        return await message.reply_text("Give a variable name to get its value.")
     check_var = message.text.split(None, 2)[1]
     if check_var.upper() not in all_vars:
-        return await message.reply_text("Give a valid variable name to get it's value.")
-    output = Config.__dict__[check_var.upper()]
+        return await message.reply_text("Give a valid variable name to get its value.")
+    output = getattr(Config, check_var.upper(), None)
     if not output:
         await message.reply_text("No Output Found!")
     else:
         return await message.reply_text(f"**{check_var}:** `{str(output)}`")
 
 
-@hellbot.app.on_message(filters.command("addsudo") & Config.GOD_USERS)
+@hellbot.app.on_message(filters.command("addsudo") & filters.user(Config.GOD_USERS))
 async def useradd(_, message: Message):
     if not message.reply_to_message:
         if len(message.command) != 2:
@@ -172,7 +172,7 @@ async def useradd(_, message: Message):
     return
 
 
-@hellbot.app.on_message(filters.command(["delsudo", "rmsudo"]) & Config.GOD_USERS)
+@hellbot.app.on_message(filters.command(["delsudo", "rmsudo"]) & filters.user(Config.GOD_USERS))
 async def userdel(_, message: Message):
     if not message.reply_to_message:
         if len(message.command) != 2:
