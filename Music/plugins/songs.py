@@ -8,12 +8,8 @@ from Music.helpers.formatters import formatter
 from Music.utils.pages import MakePages
 from Music.utils.youtube import ytube
 
-# Import cookies
-import cookies
-
 # Define the COOKIES_FILE variable
 COOKIES_FILE = 'cookies/cookies.txt'
-
 
 @hellbot.app.on_message(filters.command("song") & ~Config.BANNED_USERS)
 @check_mode
@@ -29,55 +25,6 @@ async def songs(_, message: Message):
     rand_key = formatter.gen_key(str(message.from_user.id), 5)
     Config.SONG_CACHE[rand_key] = all_tracks
     await MakePages.song_page(hell, rand_key, 0)
-
-
-@hellbot.app.on_message(filters.command("lyrics") & ~Config.BANNED_USERS)
-@check_mode
-@UserWrapper
-async def lyrics(_, message: Message):
-    if not Config.LYRICS_API:
-        return await message.reply_text("Lyrics module is disabled!")
-    lists = message.text.split(" ", 1)
-    if not len(lists) == 2:
-        return await message.reply_text(
-            "__Nothing given to search.__ \nExample: `/lyrics loose yourself - eminem`"
-        )
-    _input_ = lists[1].strip()
-    query = _input_.split("-", 1)
-    if len(query) == 2:
-        song = query[0].strip()
-        artist = query[1].strip()
-    else:
-        song = query[0].strip()
-        artist = ""
-    text = f"**Searching lyrics ...** \n\n__Song:__ `{song}`"
-    if artist != "":
-        text += f"\n__Artist:__ `{artist}`"
-    hell = await message.reply_text(text)
-    results = await ytube.get_lyrics(song, artist)
-    if results:
-        title = results["title"]
-        image = results["image"]
-        lyrics = results["lyrics"]
-        final = f"<b><i>• Song:</b></i> <code>{title}</code> \n<b><i>• Lyrics:</b></i> \n<code>{lyrics}</code>"
-        if len(final) >= 4095:
-            page_name = f"{title}"
-            to_paste = f"<img src='{image}'/> \n{final} \n<img src='https://telegra.ph/file/2c546060b20dfd7c1ff2d.jpg'/>"
-            link = await formatter.telegraph_paste(page_name, to_paste)
-            await hell.edit_text(
-                f"**Lyrics too big! Get it from here:** \n\n• [{title}]({link})",
-                disable_web_page_preview=True,
-            )
-        else:
-            await hell.edit_text(final)
-        chat = message.chat.title or message.chat.first_name
-        await hellbot.logit(
-            "lyrics",
-            f"**⤷ Lyrics:** `{title}`\n**⤷ Chat:** {chat} [`{message.chat.id}`]\n**⤷ User:** {message.from_user.mention} [`{message.from_user.id}`]",
-        )
-    else:
-        await hell.edit_text("Unexpected Error Occured.")
-
 
 @hellbot.app.on_callback_query(filters.regex(r"song_dl(.*)$") & ~Config.BANNED_USERS)
 async def song_cb(_, cb: CallbackQuery):
