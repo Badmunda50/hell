@@ -146,7 +146,7 @@ class MakeButtons:
         return buttons
 
     def controls_markup(self, video_id, chat_id, user_id):
-    buttons = [
+        buttons = [
         [
             self.ikb(text="⟲", callback_data=f"ctrl|bseek|{chat_id}"),
             self.ikb(text="⦿", callback_data=f"ctrl|play|{chat_id}"),
