@@ -8,10 +8,10 @@ from pyrogram.errors import (
     UserNotParticipant,
 )
 from pyrogram.types import InlineKeyboardMarkup
-from pytgcalls import PyTgCalls, StreamType
-from pytgcalls.exceptions import AlreadyJoinedError, NoActiveGroupCall
-from pytgcalls.types.input_stream import AudioPiped, AudioVideoPiped
-from pytgcalls.types.input_stream.quality import MediumQualityAudio, MediumQualityVideo
+from ntgcalls import PyTgCalls, StreamType
+from ntgcalls.exceptions import AlreadyJoinedError, NoActiveGroupCall
+from ntgcalls.types.input_stream import AudioPiped, AudioVideoPiped
+from ntgcalls.types.input_stream.quality import MediumQualityAudio, MediumQualityVideo
 
 from config import Config
 from Music.helpers.buttons import Buttons
