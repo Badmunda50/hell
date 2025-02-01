@@ -1,5 +1,5 @@
 from pyrogram import filters
-from pyrogram.types import Message
+from pyrogram.types import Message, InlineKeyboardMarkup
 
 from config import Config
 from Music.core.calls import hellmusic
@@ -13,36 +13,65 @@ from Music.utils.youtube import ytube
 
 
 @hellbot.app.on_message(
-    filters.command(["speed", "bass"]) & filters.group & ~Config.BANNED_USERS
+    filters.command("speed") & filters.group & ~Config.BANNED_USERS
 )
 @check_mode
 @AuthWrapper
-async def adjust_speed_bass(_, message: Message):
-    if len(message.command) < 3:
+async def adjust_speed(_, message: Message):
+    if len(message.command) < 2:
+        buttons = [
+            [
+                hellbot.ikb(text="🕒 0.5x", callback_data=f"SpeedUP {message.chat.id}|0.5"),
+                hellbot.ikb(text="🕒 1.0x", callback_data=f"SpeedUP {message.chat.id}|1.0"),
+                hellbot.ikb(text="🕤 1.5x", callback_data=f"SpeedUP {message.chat.id}|1.5"),
+            ]
+        ]
         return await message.reply_text(
-            "Please specify the type (speed/bass) and value! \n\n**Example:** \n`/speed 1.5` or `/bass 40`"
+            "Please specify the speed value! \n\n**Example:** \n`/speed 1.5`",
+            reply_markup=InlineKeyboardMarkup(buttons)
         )
-    command_type = message.command[0]
     try:
         value = float(message.command[1])
     except ValueError:
         return await message.reply_text("Please enter a valid number!")
 
-    if command_type == "speed":
-        if value not in [0.5, 1.0, 1.5]:
-            return await message.reply_text("Valid speed values are 0.5, 1.0, 1.5")
-        await hellmusic.adjust_speed(message.chat.id, value)
-        return await message.reply_text(
-            f"Voice chat speed adjusted to {value}x by {message.from_user.mention}"
-        )
+    if value not in [0.5, 1.0, 1.5]:
+        return await message.reply_text("Valid speed values are 0.5, 1.0, 1.5")
+    await hellmusic.adjust_speed(message.chat.id, value)
+    return await message.reply_text(
+        f"Voice chat speed adjusted to {value}x by {message.from_user.mention}"
+    )
 
-    elif command_type == "bass":
-        if value not in [20, 40, 60]:
-            return await message.reply_text("Valid bass values are 20, 40, 60")
-        await hellmusic.adjust_bass(message.chat.id, value)
+
+@hellbot.app.on_message(
+    filters.command("bass") & filters.group & ~Config.BANNED_USERS
+)
+@check_mode
+@AuthWrapper
+async def adjust_bass(_, message: Message):
+    if len(message.command) < 2:
+        buttons = [
+            [
+                hellbot.ikb(text="ß 20x", callback_data=f"BassUP {message.from_user.id}|20"),
+                hellbot.ikb(text="ß 40x", callback_data=f"BassUP {message.from_user.id}|40"),
+                hellbot.ikb(text="ß 60x", callback_data=f"BassUP {message.from_user.id}|60"),
+            ]
+        ]
         return await message.reply_text(
-            f"Bass boosted to {value}x by {message.from_user.mention}"
+            "Please specify the bass value! \n\n**Example:** \n`/bass 40`",
+            reply_markup=InlineKeyboardMarkup(buttons)
         )
+    try:
+        value = float(message.command[1])
+    except ValueError:
+        return await message.reply_text("Please enter a valid number!")
+
+    if value not in [20, 40, 60]:
+        return await message.reply_text("Valid bass values are 20, 40, 60")
+    await hellmusic.adjust_bass(message.chat.id, value)
+    return await message.reply_text(
+        f"Bass boosted to {value}x by {message.from_user.mention}"
+    )
 
 
 @hellbot.app.on_message(
