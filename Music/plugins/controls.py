@@ -1,5 +1,5 @@
 from pyrogram import filters
-from pyrogram.types import Message, InlineKeyboardMarkup
+from pyrogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup
 
 from config import Config
 from Music.core.calls import hellmusic
@@ -7,10 +7,119 @@ from Music.core.clients import hellbot
 from Music.core.database import db
 from Music.core.decorators import AuthWrapper, check_mode
 from Music.helpers.formatters import formatter
-from Music.helpers.buttons import ikb  # Import the ikb method
 from Music.utils.play import player
 from Music.utils.queue import Queue
 from Music.utils.youtube import ytube
+
+
+def speed_markup(_, chat_id):
+    upl = InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton(
+                    text="🕒 0.5x",
+                    callback_data=f"SpeedUP {chat_id}|0.5",
+                ),
+                InlineKeyboardButton(
+                    text="🕓 0.75x",
+                    callback_data=f"SpeedUP {chat_id}|0.75",
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text=_["P_B_4"],
+                    callback_data=f"SpeedUP {chat_id}|1.0",
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🕤 1.5x",
+                    callback_data=f"SpeedUP {chat_id}|1.5",
+                ),
+                InlineKeyboardButton(
+                    text="🕛 2.0x",
+                    callback_data=f"SpeedUP {chat_id}|2.0",
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text=_["CLOSE_BUTTON"],
+                    callback_data="close",
+                ),
+            ],
+        ]
+    )
+    return upl
+
+
+def bass_markup(_, chat_id):
+    upl = InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton(
+                    text="🔉 10×",
+                    callback_data=f"BassUP {chat_id}|10",
+                ),
+                InlineKeyboardButton(
+                    text="🔉 20×",
+                    callback_data=f"BassUP {chat_id}|20",
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text=_["P_B_4"] + " 00",  # Default Bass Level with 00 added
+                    callback_data=f"BassUP {chat_id}|1",
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🔊 30×",
+                    callback_data=f"BassUP {chat_id}|30",
+                ),
+                InlineKeyboardButton(
+                    text="🔊 40×",
+                    callback_data=f"BassUP {chat_id}|40",
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🔊 50×",
+                    callback_data=f"BassUP {chat_id}|50",
+                ),
+                InlineKeyboardButton(
+                    text="🔊 60×",
+                    callback_data=f"BassUP {chat_id}|60",
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🔊 70×",
+                    callback_data=f"BassUP {chat_id}|70",
+                ),
+                InlineKeyboardButton(
+                    text="🔊 80×",
+                    callback_data=f"BassUP {chat_id}|80",
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🔊 90×",
+                    callback_data=f"BassUP {chat_id}|90",
+                ),
+                InlineKeyboardButton(
+                    text="🔊 100×",
+                    callback_data=f"BassUP {chat_id}|100",
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text=_["CLOSE_BUTTON"],
+                    callback_data="close",
+                ),
+            ],
+        ]
+    )
+    return upl
 
 
 @hellbot.app.on_message(
@@ -20,16 +129,10 @@ from Music.utils.youtube import ytube
 @AuthWrapper
 async def adjust_speed(_, message: Message):
     if len(message.command) < 2:
-        buttons = [
-            [
-                ikb(text="🕒 0.5x", callback_data=f"SpeedUP {message.chat.id}|0.5"),
-                ikb(text="🕒 1.0x", callback_data=f"SpeedUP {message.chat.id}|1.0"),
-                ikb(text="🕤 1.5x", callback_data=f"SpeedUP {message.chat.id}|1.5"),
-            ]
-        ]
+        buttons = speed_markup(_, message.chat.id)
         return await message.reply_text(
             "Please specify the speed value! \n\n**Example:** \n`/speed 1.5`",
-            reply_markup=InlineKeyboardMarkup(buttons)
+            reply_markup=buttons
         )
     try:
         value = float(message.command[1])
@@ -51,16 +154,10 @@ async def adjust_speed(_, message: Message):
 @AuthWrapper
 async def adjust_bass(_, message: Message):
     if len(message.command) < 2:
-        buttons = [
-            [
-                ikb(text="ß 20x", callback_data=f"BassUP {message.from_user.id}|20"),
-                ikb(text="ß 40x", callback_data=f"BassUP {message.from_user.id}|40"),
-                ikb(text="ß 60x", callback_data=f"BassUP {message.from_user.id}|60"),
-            ]
-        ]
+        buttons = bass_markup(_, message.chat.id)
         return await message.reply_text(
             "Please specify the bass value! \n\n**Example:** \n`/bass 40`",
-            reply_markup=InlineKeyboardMarkup(buttons)
+            reply_markup=buttons
         )
     try:
         value = float(message.command[1])
@@ -270,4 +367,4 @@ async def seek(_, message: Message):
     Queue.update_duration(message.chat.id, seek_type, seek_time)
     await hell.edit_text(
         f"Seeked `{seek_time}` seconds {'forward' if seek_type == 1 else 'backward'}!"
-)
+            )
