@@ -41,12 +41,6 @@ def speed_markup(_, chat_id):
                     callback_data=f"SpeedUP {chat_id}|2.0",
                 ),
             ],
-            [
-                InlineKeyboardButton(
-                    text=_["CLOSE_BUTTON"],
-                    callback_data="close",
-                ),
-            ],
         ]
     )
     return upl
@@ -109,12 +103,6 @@ def bass_markup(_, chat_id):
                 InlineKeyboardButton(
                     text="🔊 100×",
                     callback_data=f"BassUP {chat_id}|100",
-                ),
-            ],
-            [
-                InlineKeyboardButton(
-                    text=_["CLOSE_BUTTON"],
-                    callback_data="close",
                 ),
             ],
         ]
@@ -367,4 +355,4 @@ async def seek(_, message: Message):
     Queue.update_duration(message.chat.id, seek_type, seek_time)
     await hell.edit_text(
         f"Seeked `{seek_time}` seconds {'forward' if seek_type == 1 else 'backward'}!"
-            )
+        )
