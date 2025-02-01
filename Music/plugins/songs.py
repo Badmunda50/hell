@@ -6,6 +6,7 @@ from pyrogram import Client, filters
 from pyrogram.types import Message
 from youtube_search import YoutubeSearch
 import requests
+from Music.core.decorators import UserWrapper, check_mode
 from Music.core.clients import hellbot as app
 
 # Define a dictionary to track the last message timestamp for each user
@@ -21,8 +22,10 @@ COOKIES_FILE = 'cookies/cookies.txt'
 
 
 # Command to search and download song
-@app.on_message(filters.command("song"))
-async def download_song(_, message: Message):
+@hellbot.app.on_message(filters.command("song") & ~Config.BANNED_USERS)
+@check_mode
+@UserWrapper
+async def songs(_, message: Message):
     user_id = message.from_user.id
     current_time = time()
     
