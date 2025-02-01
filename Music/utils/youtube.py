@@ -14,8 +14,6 @@ from config import Config
 from Music.core.clients import hellbot
 from Music.core.logger import LOGS
 from Music.helpers.strings import TEXTS
-from AnonXMusic.utils.database import is_on_off
-from AnonXMusic.utils.formatters import time_to_seconds
 
 
 async def shell_cmd(cmd):
@@ -33,7 +31,7 @@ async def shell_cmd(cmd):
     return out.decode("utf-8")
 
 
-cookies_file = "AnonXMusic/assets/cookies.txt"
+cookies_file = "cookies/cookies.txt"
 
 
 class YouTube:
