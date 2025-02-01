@@ -13,6 +13,39 @@ from Music.utils.youtube import ytube
 
 
 @hellbot.app.on_message(
+    filters.command(["speed", "bass"]) & filters.group & ~Config.BANNED_USERS
+)
+@check_mode
+@AuthWrapper
+async def adjust_speed_bass(_, message: Message):
+    if len(message.command) < 3:
+        return await message.reply_text(
+            "Please specify the type (speed/bass) and value! \n\n**Example:** \n`/speed 1.5` or `/bass 40`"
+        )
+    command_type = message.command[0]
+    try:
+        value = float(message.command[1])
+    except ValueError:
+        return await message.reply_text("Please enter a valid number!")
+
+    if command_type == "speed":
+        if value not in [0.5, 1.0, 1.5]:
+            return await message.reply_text("Valid speed values are 0.5, 1.0, 1.5")
+        await hellmusic.adjust_speed(message.chat.id, value)
+        return await message.reply_text(
+            f"Voice chat speed adjusted to {value}x by {message.from_user.mention}"
+        )
+
+    elif command_type == "bass":
+        if value not in [20, 40, 60]:
+            return await message.reply_text("Valid bass values are 20, 40, 60")
+        await hellmusic.adjust_bass(message.chat.id, value)
+        return await message.reply_text(
+            f"Bass boosted to {value}x by {message.from_user.mention}"
+        )
+
+
+@hellbot.app.on_message(
     filters.command(["mute", "unmute"]) & filters.group & ~Config.BANNED_USERS
 )
 @check_mode
