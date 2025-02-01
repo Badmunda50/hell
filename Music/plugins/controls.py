@@ -27,7 +27,7 @@ def speed_markup(_, chat_id):
             ],
             [
                 InlineKeyboardButton(
-                    text=_["P_B_4"],
+                    text="🕓 0.00x",
                     callback_data=f"SpeedUP {chat_id}|1.0",
                 ),
             ],
@@ -67,7 +67,7 @@ def bass_markup(_, chat_id):
             ],
             [
                 InlineKeyboardButton(
-                    text=_["P_B_4"] + " 00",  # Default Bass Level with 00 added
+                    text="🔉 00×",  # Default Bass Level with 00 added
                     callback_data=f"BassUP {chat_id}|1",
                 ),
             ],
