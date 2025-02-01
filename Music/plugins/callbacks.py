@@ -27,7 +27,8 @@ async def close_cb(_, cb: CallbackQuery):
 async def controls_cb(_, cb: CallbackQuery):
     video_id = cb.data.split("|")[1]
     chat_id = int(cb.data.split("|")[2])
-    btns = Buttons.controls_markup(video_id, chat_id)
+    user_id = cb.from_user.id  # Get user ID from the callback query
+    btns = Buttons.controls_markup(video_id, chat_id, user_id)
     try:
         await cb.message.edit_reply_markup(InlineKeyboardMarkup(btns))
     except:
@@ -211,7 +212,16 @@ async def controler_cb(_, cb: CallbackQuery):
             await cb.message.edit_reply_markup(InlineKeyboardMarkup(btns))
         except:
             return
-
+    elif action.startswith("SpeedUP"):
+        speed = action.split("|")[1]
+        await player.set_speed(cb.message.chat.id, speed)
+        await cb.answer(f"Playback speed set to {speed}x", show_alert=True)
+        await cb.message.reply_text(f"__Playback speed set to {speed}x__ by: {cb.from_user.mention}")
+    elif action.startswith("BassUP"):
+        bass_level = action.split("|")[1]
+        await player.set_bass(cb.message.chat.id, bass_level)
+        await cb.answer(f"Bass level set to {bass_level}x", show_alert=True)
+        await cb.message.reply_text(f"__Bass level set to {bass_level}x__ by: {cb.from_user.mention}")
 
 @hellbot.app.on_callback_query(filters.regex(r"help") & ~Config.BANNED_USERS)
 async def help_cb(_, cb: CallbackQuery):
