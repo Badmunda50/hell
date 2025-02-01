@@ -131,8 +131,6 @@ class YouTube:
         except Exception:
             pass
 
-ytube = YouTube()
-
     async def format_link(self, link: str, video_id: bool) -> str:
         link = link.strip()
         if video_id:
@@ -140,6 +138,7 @@ ytube = YouTube()
         if "&" in link:
             link = link.split("&")[0]
         return link
+
 
     async def get_data(self, link: str, video_id: bool, limit: int = 1) -> list:
         yt_url = await self.format_link(link, video_id)
