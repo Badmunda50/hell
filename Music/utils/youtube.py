@@ -33,6 +33,9 @@ async def shell_cmd(cmd):
 
 cookies_file = "cookies/cookies.txt"
 
+def is_on_off(value: int) -> bool:
+    # Example implementation, replace with your actual logic
+    return value == 1
 
 class YouTube:
     def __init__(self):
