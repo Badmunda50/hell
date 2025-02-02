@@ -41,7 +41,6 @@ async def __clean__(chat_id: int, force: bool):
     await db.remove_active_vc(chat_id)
 
 
-
 def check_duration(file_path):
     try:
         result = subprocess.run(
@@ -52,6 +51,15 @@ def check_duration(file_path):
         return float(result.stdout)
     except Exception as e:
         print(f"Error checking duration: {e}")
+
+def speed_converter(played, speed):
+    con_seconds = played / speed
+    return played, con_seconds
+
+def seconds_to_min(seconds):
+    mins = seconds // 60
+    secs = seconds % 60
+    return f"{int(mins)}:{int(secs):02d}"
 
 class HellMusic(PyTgCalls):
     def __init__(self):
