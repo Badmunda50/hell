@@ -44,7 +44,6 @@ async def player_cb(_, cb: CallbackQuery):
     except:
         return
 
-
 @hellbot.app.on_callback_query(filters.regex(r"ctrl") & ~Config.BANNED_USERS)
 async def controler_cb(_, cb: CallbackQuery):
     _, action, chat_id = cb.data.split("|")
@@ -231,6 +230,7 @@ async def controler_cb(_, cb: CallbackQuery):
         await cb.answer(f"Bass level set to {bass_level}x", show_alert=True)
         await cb.message.reply_text(f"__Bass level set to {bass_level}x__ by: {cb.from_user.mention}")
 
+
 @hellbot.app.on_callback_query(filters.regex(r"help") & ~Config.BANNED_USERS)
 async def help_cb(_, cb: CallbackQuery):
     data = cb.data.split("|")[1]
@@ -277,4 +277,4 @@ async def source_cb(_, cb: CallbackQuery):
         TEXTS.SOURCE.format(hellbot.app.mention),
         reply_markup=InlineKeyboardMarkup(Buttons.source_markup()),
         disable_web_page_preview=True,
-    )
+            )
