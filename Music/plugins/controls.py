@@ -128,7 +128,7 @@ async def handle_speedup(_, cb: CallbackQuery):
 @hellbot.app.on_callback_query(filters.regex(r"BassUP"))
 async def handle_bassup(_, cb: CallbackQuery):
     data = cb.data.split("|")
-    chat_id = int(data[0].split(" ")[1])
+    chat_id = data[0].split(" ")[1]
     bass_level = int(data[1])
     que = Queue.get_queue(cb.message.chat.id)
     if not que:
@@ -136,15 +136,16 @@ async def handle_bassup(_, cb: CallbackQuery):
     current_song = que[0]
 
     try:
-        chat = await hellbot.app.get_chat(chat_id)
+        chat = await hellbot.app.get_chat(cb.message.chat.id)
         if chat.type not in ['group', 'supergroup', 'channel']:
             return await cb.answer("Bass boost can only be applied in group chats!", show_alert=True)
     except PeerIdInvalid:
         return await cb.answer("Invalid chat ID!", show_alert=True)
 
-    await hellmusic.bass_boost_stream(chat_id, current_song["file"], bass_level, que)
+    await hellmusic.bass_boost_stream(cb.message.chat.id, current_song["file"], bass_level, que)
     await cb.answer(f"Bass level set to {bass_level}x", show_alert=True)
     await cb.message.reply_text(f"__Bass level set to {bass_level}x__ by: {cb.from_user.mention}")
+    
 
 @hellbot.app.on_message(
     filters.command(["mute", "unmute"]) & filters.group & ~Config.BANNED_USERS
