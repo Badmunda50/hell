@@ -214,12 +214,20 @@ async def controler_cb(_, cb: CallbackQuery):
             return
     elif action.startswith("SpeedUP"):
         speed = action.split("|")[1]
-        await player.set_speed(cb.message.chat.id, speed)
+        que = Queue.get_queue(cb.message.chat.id)
+        if que == []:
+            return await cb.answer("No songs in queue to speed up!", show_alert=True)
+        current_song = que[0]
+        await hellmusic.speedup_stream(cb.message.chat.id, current_song["file"], speed, que)
         await cb.answer(f"Playback speed set to {speed}x", show_alert=True)
         await cb.message.reply_text(f"__Playback speed set to {speed}x__ by: {cb.from_user.mention}")
     elif action.startswith("BassUP"):
         bass_level = action.split("|")[1]
-        await player.set_bass(cb.message.chat.id, bass_level)
+        que = Queue.get_queue(cb.message.chat.id)
+        if que == []:
+            return await cb.answer("No songs in queue to boost bass!", show_alert=True)
+        current_song = que[0]
+        await hellmusic.bass_boost_stream(cb.message.chat.id, current_song["file"], bass_level, que)
         await cb.answer(f"Bass level set to {bass_level}x", show_alert=True)
         await cb.message.reply_text(f"__Bass level set to {bass_level}x__ by: {cb.from_user.mention}")
 
