@@ -75,8 +75,6 @@ class Database(object):
     async def update_entry(self, chat_id: int, entry: dict):
         await self.songsdb.update_one({"chat_id": chat_id}, {"$set": entry}, upsert=True)
 
-    # existing code...
-
 
 class HellMusic(PyTgCalls):
     def __init__(self):
@@ -84,6 +82,9 @@ class HellMusic(PyTgCalls):
         self.audience = {}
 
     async def bass_boost_stream(self, chat_id: int, file_path, bass_level, playing):
+        if not await self._is_valid_group_chat(chat_id):
+            raise JoinGCException(f"The chat_id \"{chat_id}\" belongs to a user")
+        
         base = os.path.basename(file_path)
         chatdir = os.path.join(os.getcwd(), "playback", "bass", str(bass_level))
         if not os.path.isdir(chatdir):
@@ -136,6 +137,9 @@ class HellMusic(PyTgCalls):
         await db.update_entry(chat_id, db_entry)
 
     async def join_vc(self, chat_id: int, file_path: str, video: bool = False):
+        if not await self._is_valid_group_chat(chat_id):
+            raise JoinGCException(f"The chat_id \"{chat_id}\" belongs to a user")
+
         # define input stream
         if video:
             input_stream = AudioVideoPiped(
@@ -175,6 +179,14 @@ class HellMusic(PyTgCalls):
         user_ids = [user.user_id for user in users]
         await self.autoend(chat_id, user_ids)
 
+    async def _is_valid_group_chat(self, chat_id: int) -> bool:
+        try:
+            chat = await hellbot.app.get_chat(chat_id)
+            return chat.type in ['group', 'supergroup', 'channel']
+        except Exception as e:
+            LOGS.error(f"Error checking chat type: {e}")
+            return False
+            
     async def speedup_stream(self, chat_id: int, file_path, speed, playing):
         if float(speed) != 1.0:
             base = os.path.basename(file_path)
