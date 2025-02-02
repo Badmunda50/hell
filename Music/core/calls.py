@@ -82,53 +82,59 @@ class HellMusic(PyTgCalls):
         self.audience = {}
 
     async def bass_boost_stream(self, chat_id: int, file_path, bass_level, playing):
-        if float(bass_level) != 0.0:
-            base = os.path.basename(file_path)
-            chatdir = os.path.join(os.getcwd(), "playback", "bass", str(bass_level))
-            if not os.path.isdir(chatdir):
-                os.makedirs(chatdir)
-            out = os.path.join(chatdir, base)
-            if not os.path.isfile(out):
-                proc = await asyncio.create_subprocess_shell(
-                    cmd=(
-                        f"ffmpeg -i {file_path} -af 'bass=g={bass_level}' {out}"
-                    ),
-                    stdin=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE,
-                )
-                await proc.communicate()
-            else:
-                out = file_path
-            dur = await asyncio.get_event_loop().run_in_executor(None, check_duration, out)
-            dur = int(dur)
-            played = playing[0].get("played", 0)
-            duration = seconds_to_min(dur)
-            stream = (
-                AudioVideoPiped(
-                    out,
-                    MediumQualityAudio(),
-                    MediumQualityVideo(),
-                    additional_ffmpeg_parameters=f"-ss {played} -to {duration}",
-                )
-                if playing[0]["vc_type"] == "video"
-                else AudioPiped(
-                    out,
-                    MediumQualityAudio(),
-                    additional_ffmpeg_parameters=f"-ss {played} -to {duration}",
-                )
+        if not await self._is_valid_group_chat(chat_id):
+            raise JoinGCException(f"The chat_id \"{chat_id}\" belongs to a user")
+        
+        base = os.path.basename(file_path)
+        chatdir = os.path.join(os.getcwd(), "playback", "bass", str(bass_level))
+        if not os.path.isdir(chatdir):
+            os.makedirs(chatdir)
+        out = os.path.join(chatdir, base)
+        if not os.path.isfile(out):
+            proc = await asyncio.create_subprocess_shell(
+                cmd=(
+                    f"ffmpeg -i {file_path} -af 'bass=g={bass_level}' {out}"
+                ),
+                stdin=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
             )
-            db_entry = await db.get_entry(chat_id)
-            db_entry["file"] = db_entry.get("file", file_path)  # Ensure the 'file' key is set
-            if db_entry["file"] == file_path:
+            await proc.communicate()
+        else:
+            out = file_path
+        dur = await asyncio.get_event_loop().run_in_executor(None, check_duration, out)
+        dur = int(dur)
+        played = playing[0].get("played", 0)
+        duration = seconds_to_min(dur)
+        stream = (
+            AudioVideoPiped(
+                out,
+                MediumQualityAudio(),
+                MediumQualityVideo(),
+                additional_ffmpeg_parameters=f"-ss {played} -to {duration}",
+            )
+            if playing[0]["vc_type"] == "video"
+            else AudioPiped(
+                out,
+                MediumQualityAudio(),
+                additional_ffmpeg_parameters=f"-ss {played} -to {duration}",
+            )
+        )
+        db_entry = await db.get_entry(chat_id)
+        db_entry["file"] = db_entry.get("file", file_path)  # Ensure the 'file' key is set
+        if db_entry["file"] == file_path:
+            try:
                 await self.music.change_stream(chat_id, stream)
-            else:
-                raise ValueError("File path mismatch")
-            db_entry["played"] = played
-            db_entry["duration"] = duration
-            db_entry["seconds"] = dur
-            db_entry["bass_path"] = out
-            db_entry["bass_level"] = bass_level
-            await db.update_entry(chat_id, db_entry)
+            except (NoActiveGroupCall, NotInGroupCallError):
+                await self.join_vc(chat_id, file_path, playing[0]["vc_type"] == "video")
+                await self.music.change_stream(chat_id, stream)
+        else:
+            raise ValueError("File path mismatch")
+        db_entry["played"] = played
+        db_entry["duration"] = duration
+        db_entry["seconds"] = dur
+        db_entry["bass_path"] = out
+        db_entry["bass_level"] = bass_level
+        await db.update_entry(chat_id, db_entry)
 
     async def join_vc(self, chat_id: int, file_path: str, video: bool = False):
         if not await self._is_valid_group_chat(chat_id):
@@ -180,70 +186,6 @@ class HellMusic(PyTgCalls):
         except Exception as e:
             LOGS.error(f"Error checking chat type: {e}")
             return False
-            
-    async def speedup_stream(self, chat_id: int, file_path, speed, playing):
-        if float(speed) != 1.0:
-            base = os.path.basename(file_path)
-            chatdir = os.path.join(os.getcwd(), "playback", str(speed))
-            if not os.path.isdir(chatdir):
-                os.makedirs(chatdir)
-            out = os.path.join(chatdir, base)
-            if not os.path.isfile(out):
-                if float(speed) == 0.5:
-                    vs = 2.0
-                elif float(speed) == 0.75:
-                    vs = 1.35
-                elif float(speed) == 1.5:
-                    vs = 0.68
-                elif float(speed) == 2.0:
-                    vs = 0.5
-                proc = await asyncio.create_subprocess_shell(
-                    cmd=(
-                        "ffmpeg "
-                        "-i "
-                        f"{file_path} "
-                        "-filter:v "
-                        f"setpts={vs}*PTS "
-                        "-filter:a "
-                        f"atempo={speed} "
-                        f"{out}"
-                    ),
-                    stdin=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE,
-                )
-                await proc.communicate()
-            else:
-                out = file_path
-            dur = await asyncio.get_event_loop().run_in_executor(None, check_duration, out)
-            dur = int(dur)
-            played, con_seconds = speed_converter(playing[0]["played"], speed)
-            duration = seconds_to_min(dur)
-            stream = (
-                AudioVideoPiped(
-                    out,
-                    MediumQualityAudio(),
-                    MediumQualityVideo(),
-                    additional_ffmpeg_parameters=f"-ss {played} -to {duration}",
-                )
-                if playing[0]["vc_type"] == "video"
-                else AudioPiped(
-                    out,
-                    MediumQualityAudio(),
-                    additional_ffmpeg_parameters=f"-ss {played} -to {duration}",
-                )
-            )
-            db_entry = await db.get_entry(chat_id)
-            db_entry["file"] = db_entry.get("file", file_path)  # Ensure the 'file' key is set
-            if db_entry["file"] == file_path:
-                await self.music.change_stream(chat_id, stream)
-            else:
-                raise ValueError("File path mismatch")
-            db_entry["played"] = con_seconds
-            db_entry["duration"] = duration
-            db_entry["seconds"] = dur
-            db_entry["speed_path"] = out
-            db_entry["speed"] = speed
-            await db.update_entry(chat_id, db_entry)
             
     async def speedup_stream(self, chat_id: int, file_path, speed, playing):
         if float(speed) != 1.0:
@@ -589,21 +531,4 @@ class HellMusic(PyTgCalls):
                             link = await hellbot.app.export_chat_invite_link(chat_id)
                     except ChatAdminRequired:
                         raise UserException(
-                            f"[UserException]: Bot is not admin in chat {chat_id}"
-                        )
-                    except Exception as e:
-                        raise UserException(f"[UserException]: {e}")
-                    hell = await hellbot.app.send_message(
-                        chat_id, "Inviting assistant to chat..."
-                    )
-                    if link.startswith("https://t.me/+"):
-                        link = link.replace("https://t.me/+", "https://t.me/joinchat/")
-                    await hellbot.user.join_chat(link)
-                    await hell.edit_text("Assistant joined the chat! Enjoy your music!")
-                except UserAlreadyParticipant:
-                    pass
-                except Exception as e:
-                    raise UserException(f"[UserException]: {e}")
-
-
-hellmusic = HellMusic()
+                            f"[UserException]: Bot is not admin in chat 
