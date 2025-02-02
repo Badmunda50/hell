@@ -1,6 +1,7 @@
 import datetime
 import os
 import asyncio
+import subprocess
 
 from pyrogram.enums import ChatMemberStatus
 from pyrogram.errors import (
@@ -39,6 +40,18 @@ async def __clean__(chat_id: int, force: bool):
         Queue.clear_queue(chat_id)
     await db.remove_active_vc(chat_id)
 
+
+
+def check_duration(file_path):
+    try:
+        result = subprocess.run(
+            ["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", file_path],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT
+        )
+        return float(result.stdout)
+    except Exception as e:
+        print(f"Error checking duration: {e}")
 
 class HellMusic(PyTgCalls):
     def __init__(self):
