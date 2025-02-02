@@ -1,5 +1,6 @@
 from pyrogram import filters
 from pyrogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery  # Add CallbackQuery here
+from pyrogram.errors import PeerIdInvalid
 
 from config import Config
 from Music.core.calls import hellmusic
@@ -123,6 +124,7 @@ async def handle_speedup(_, cb: CallbackQuery):
     await cb.answer(f"Playback speed set to {speed}x", show_alert=True)
     await cb.message.reply_text(f"__Playback speed set to {speed}x__ by: {cb.from_user.mention}")
 
+
 @hellbot.app.on_callback_query(filters.regex(r"BassUP"))
 async def handle_bassup(_, cb: CallbackQuery):
     data = cb.data.split("|")
@@ -133,21 +135,17 @@ async def handle_bassup(_, cb: CallbackQuery):
         return await cb.answer("No songs in queue to boost bass!", show_alert=True)
     current_song = que[0]
 
-    # Remove chat type restriction
+    try:
+        chat = await hellbot.app.get_chat(chat_id)
+        if chat.type not in ['group', 'supergroup', 'channel']:
+            return await cb.answer("Bass boost can only be applied in group chats!", show_alert=True)
+    except PeerIdInvalid:
+        return await cb.answer("Invalid chat ID!", show_alert=True)
+
     await hellmusic.bass_boost_stream(chat_id, current_song["file"], bass_level, que)
     await cb.answer(f"Bass level set to {bass_level}x", show_alert=True)
     await cb.message.reply_text(f"__Bass level set to {bass_level}x__ by: {cb.from_user.mention}")
-    
-    # Check if the chat_id belongs to a group chat
-    chat = await hellbot.app.get_chat(chat_id)
-    await cb.message.reply_text(f"Chat type: {chat.type}")
-    if chat.type not in ['group', 'supergroup', 'channel']:
-        return await cb.answer("Bass boost can only be applied in group chats!", show_alert=True)
-    
-    await hellmusic.bass_boost_stream(chat_id, current_song["file"], bass_level, que)
-    await cb.answer(f"Bass level set to {bass_level}x", show_alert=True)
-    await cb.message.reply_text(f"__Bass level set to {bass_level}x__ by: {cb.from_user.mention}")
-    
+
 @hellbot.app.on_message(
     filters.command(["mute", "unmute"]) & filters.group & ~Config.BANNED_USERS
 )
