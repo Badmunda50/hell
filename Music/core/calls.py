@@ -531,4 +531,21 @@ class HellMusic(PyTgCalls):
                             link = await hellbot.app.export_chat_invite_link(chat_id)
                     except ChatAdminRequired:
                         raise UserException(
-                            f"[UserException]: Bot is not admin in chat 
+                            f"[UserException]: Bot is not admin in chat {chat_id}"
+                        )
+                    except Exception as e:
+                        raise UserException(f"[UserException]: {e}")
+                    hell = await hellbot.app.send_message(
+                        chat_id, "Inviting assistant to chat..."
+                    )
+                    if link.startswith("https://t.me/+"):
+                        link = link.replace("https://t.me/+", "https://t.me/joinchat/")
+                    await hellbot.user.join_chat(link)
+                    await hell.edit_text("Assistant joined the chat! Enjoy your music!")
+                except UserAlreadyParticipant:
+                    pass
+                except Exception as e:
+                    raise UserException(f"[UserException]: {e}")
+
+
+hellmusic = HellMusic()
