@@ -110,54 +110,31 @@ def bass_markup(_, chat_id):
     return upl
 
 
-@hellbot.app.on_message(
-    filters.command("speed") & filters.group & ~Config.BANNED_USERS
-)
-@check_mode
-@AuthWrapper
-async def adjust_speed(_, message: Message):
-    if len(message.command) < 2:
-        buttons = speed_markup(_, message.chat.id)
-        return await message.reply_text(
-            "Please specify the speed value! \n\n**Example:** \n`/speed 1.5`",
-            reply_markup=buttons
-        )
-    try:
-        value = float(message.command[1])
-    except ValueError:
-        return await message.reply_text("Please enter a valid number!")
+@hellbot.app.on_callback_query(filters.regex(r"SpeedUP"))
+async def handle_speedup(_, cb: CallbackQuery):
+    data = cb.data.split("|")
+    chat_id = data[0].split(" ")[1]
+    speed = float(data[1])
+    que = Queue.get_queue(cb.message.chat.id)
+    if not que:
+        return await cb.answer("No songs in queue to speed up!", show_alert=True)
+    current_song = que[0]
+    await hellmusic.speedup_stream(chat_id, current_song["file"], speed, que)
+    await cb.answer(f"Playback speed set to {speed}x", show_alert=True)
+    await cb.message.reply_text(f"__Playback speed set to {speed}x__ by: {cb.from_user.mention}")
 
-    if value not in [0.5, 1.0, 1.5]:
-        return await message.reply_text("Valid speed values are 0.5, 1.0, 1.5")
-    await hellmusic.adjust_speed(message.chat.id, value)
-    return await message.reply_text(
-        f"Voice chat speed adjusted to {value}x by {message.from_user.mention}"
-    )
-
-
-@hellbot.app.on_message(
-    filters.command("bass") & filters.group & ~Config.BANNED_USERS
-)
-@check_mode
-@AuthWrapper
-async def adjust_bass(_, message: Message):
-    if len(message.command) < 2:
-        buttons = bass_markup(_, message.chat.id)
-        return await message.reply_text(
-            "Please specify the bass value! \n\n**Example:** \n`/bass 40`",
-            reply_markup=buttons
-        )
-    try:
-        value = float(message.command[1])
-    except ValueError:
-        return await message.reply_text("Please enter a valid number!")
-
-    if value not in [20, 40, 60]:
-        return await message.reply_text("Valid bass values are 20, 40, 60")
-    await hellmusic.adjust_bass(message.chat.id, value)
-    return await message.reply_text(
-        f"Bass boosted to {value}x by {message.from_user.mention}"
-    )
+@hellbot.app.on_callback_query(filters.regex(r"BassUP"))
+async def handle_bassup(_, cb: CallbackQuery):
+    data = cb.data.split("|")
+    chat_id = data[0].split(" ")[1]
+    bass_level = int(data[1])
+    que = Queue.get_queue(cb.message.chat.id)
+    if not que:
+        return await cb.answer("No songs in queue to boost bass!", show_alert=True)
+    current_song = que[0]
+    await hellmusic.bass_boost_stream(chat_id, current_song["file"], bass_level, que)
+    await cb.answer(f"Bass level set to {bass_level}x", show_alert=True)
+    await cb.message.reply_text(f"__Bass level set to {bass_level}x__ by: {cb.from_user.mention}")
 
 
 @hellbot.app.on_message(
