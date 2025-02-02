@@ -119,6 +119,7 @@ class HellMusic(PyTgCalls):
             )
         )
         db_entry = await db.get_entry(chat_id)
+        db_entry["file"] = db_entry.get("file", file_path)  # Ensure the 'file' key is set
         if db_entry["file"] == file_path:
             await self.music.change_stream(chat_id, stream)
         else:
@@ -182,6 +183,7 @@ class HellMusic(PyTgCalls):
                 )
             )
             db_entry = await db.get_entry(chat_id)
+            db_entry["file"] = db_entry.get("file", file_path)  # Ensure the 'file' key is set
             if db_entry["file"] == file_path:
                 await self.music.change_stream(chat_id, stream)
             else:
@@ -192,6 +194,7 @@ class HellMusic(PyTgCalls):
             db_entry["speed_path"] = out
             db_entry["speed"] = speed
             await db.update_entry(chat_id, db_entry)
+
 
     async def autoend(self, chat_id: int, users: list):
         autoend = await db.get_autoend()
