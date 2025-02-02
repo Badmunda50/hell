@@ -40,6 +40,14 @@ class Database(object):
             LOGS.error(f"\x44\x61\x74\x61\x62\x61\x73\x65\x20\x63\x6f\x6e\x6e\x65\x63\x74\x69\x6f\x6e\x20\x66\x61\x69\x6c\x65\x64\x3a\x20\x27{e}\x27")
             sys.exit()
 
+    async def get_entry(self, chat_id: int) -> dict:
+        entry = await self.songsdb.find_one({"chat_id": chat_id})
+        return entry if entry else {}
+    
+    async def update_entry(self, chat_id: int, entry: dict):
+        await self.songsdb.update_one({"chat_id": chat_id}, {"$set": entry}, upsert=True)
+
+
     # users db #
     async def add_user(self, user_id: int, user_name: str):
         context = {
