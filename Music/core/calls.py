@@ -64,6 +64,20 @@ def seconds_to_min(seconds):
     return f"{int(mins)}:{int(secs):02d}"
 
 
+
+class Database(object):
+    # existing code...
+
+    async def get_entry(self, chat_id: int) -> dict:
+        entry = await self.songsdb.find_one({"chat_id": chat_id})
+        return entry if entry else {}
+    
+    async def update_entry(self, chat_id: int, entry: dict):
+        await self.songsdb.update_one({"chat_id": chat_id}, {"$set": entry}, upsert=True)
+
+    # existing code...
+
+
 class HellMusic(PyTgCalls):
     def __init__(self):
         self.music = PyTgCalls(hellbot.user)
