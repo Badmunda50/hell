@@ -121,7 +121,11 @@ class HellMusic(PyTgCalls):
         db_entry = await db.get_entry(chat_id)
         db_entry["file"] = db_entry.get("file", file_path)  # Ensure the 'file' key is set
         if db_entry["file"] == file_path:
-            await self.music.change_stream(chat_id, stream)
+            try:
+                await self.music.change_stream(chat_id, stream)
+            except NoActiveGroupCall:
+                await self.join_vc(chat_id, file_path)
+                await self.music.change_stream(chat_id, stream)
         else:
             raise ValueError("File path mismatch")
         db_entry["played"] = played
