@@ -1,5 +1,4 @@
-from pyrogram.types import InlineKeyboardButton
-
+from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 class MakeButtons:
     def __init__(self):
@@ -24,7 +23,6 @@ class MakeButtons:
                     self.ikb("🗑", callback_data="close"),
                 ]
             ]
-
         return buttons
 
     def playfavs_markup(self, user_id: int):
@@ -145,43 +143,72 @@ class MakeButtons:
             ]
         return buttons
 
-    def controls_markup(video_id, chat_id, user_id):
-    buttons = [
-        [
-            self.ikb(text="⟲", callback_data=f"ctrl|bseek|{chat_id}"),
-            self.ikb(text="⦿", callback_data=f"ctrl|play|{chat_id}"),
-            self.ikb(text="⟳", callback_data=f"ctrl|fseek|{chat_id}"),
-        ],
-        [
-            self.ikb(text="⊡ End", callback_data=f"ctrl|end|{chat_id}"),
-            self.ikb(text="↻ Replay", callback_data=f"ctrl|replay|{chat_id}"),
-            self.ikb(text="∞ Loop", callback_data=f"ctrl|loop|{chat_id}"),
-        ],
-        [
-            self.ikb(text="⊝ Mute", callback_data=f"ctrl|mute|{chat_id}"),
-            self.ikb(text="⊜ Unmute", callback_data=f"ctrl|unmute|{chat_id}"),
-            self.ikb(text="⊹ Skip", callback_data=f"ctrl|skip|{chat_id}"),
-        ],
-        [
-            self.ikb(text="🕒 0.5x", callback_data=f"SpeedUP {chat_id}|0.5"),
-            self.ikb(text="🕒 1.0x", callback_data=f"SpeedUP {chat_id}|1.0"),
-            self.ikb(text="🕤 1.5x", callback_data=f"SpeedUP {chat_id}|1.5"),
-        ],
-    ]
-    
-    # Add bass buttons if they are not already added
-    bass_buttons = bass_markup(chat_id)
-    for row in bass_buttons.inline_keyboard:
-        buttons.append(row)
-    
-    buttons.append(
-        [
-            self.ikb(text="🔙", callback_data=f"player|{video_id}|{chat_id}"),
-            self.ikb(text="🗑", callback_data="close"),
+    def bass_markup(self, chat_id):
+        return InlineKeyboardMarkup(
+            [
+                [
+                    self.ikb("🔉 10×", callback_data=f"BassUP {chat_id}|10"),
+                    self.ikb("🔉 20×", callback_data=f"BassUP {chat_id}|20"),
+                ],
+                [
+                    self.ikb("🔉 00×", callback_data=f"BassUP {chat_id}|1"),
+                ],
+                [
+                    self.ikb("🔊 30×", callback_data=f"BassUP {chat_id}|30"),
+                    self.ikb("🔊 40×", callback_data=f"BassUP {chat_id}|40"),
+                ],
+                [
+                    self.ikb("🔊 50×", callback_data=f"BassUP {chat_id}|50"),
+                    self.ikb("🔊 60×", callback_data=f"BassUP {chat_id}|60"),
+                ],
+                [
+                    self.ikb("🔊 70×", callback_data=f"BassUP {chat_id}|70"),
+                    self.ikb("🔊 80×", callback_data=f"BassUP {chat_id}|80"),
+                ],
+                [
+                    self.ikb("🔊 90×", callback_data=f"BassUP {chat_id}|90"),
+                    self.ikb("🔊 100×", callback_data=f"BassUP {chat_id}|100"),
+                ],
+            ]
+        )
+
+    def controls_markup(self, video_id, chat_id, user_id):
+        buttons = [
+            [
+                self.ikb(text="⟲", callback_data=f"ctrl|bseek|{chat_id}"),
+                self.ikb(text="⦿", callback_data=f"ctrl|play|{chat_id}"),
+                self.ikb(text="⟳", callback_data=f"ctrl|fseek|{chat_id}"),
+            ],
+            [
+                self.ikb(text="⊡ End", callback_data=f"ctrl|end|{chat_id}"),
+                self.ikb(text="↻ Replay", callback_data=f"ctrl|replay|{chat_id}"),
+                self.ikb(text="∞ Loop", callback_data=f"ctrl|loop|{chat_id}"),
+            ],
+            [
+                self.ikb(text="⊝ Mute", callback_data=f"ctrl|mute|{chat_id}"),
+                self.ikb(text="⊜ Unmute", callback_data=f"ctrl|unmute|{chat_id}"),
+                self.ikb(text="⊹ Skip", callback_data=f"ctrl|skip|{chat_id}"),
+            ],
+            [
+                self.ikb(text="🕒 0.5x", callback_data=f"SpeedUP {chat_id}|0.5"),
+                self.ikb(text="🕒 1.0x", callback_data=f"SpeedUP {chat_id}|1.0"),
+                self.ikb(text="🕤 1.5x", callback_data=f"SpeedUP {chat_id}|1.5"),
+            ],
         ]
-    )
-    
-    return buttons
+        
+        # Add bass buttons if they are not already added
+        bass_buttons = self.bass_markup(chat_id)
+        for row in bass_buttons.inline_keyboard:
+            buttons.append(row)
+        
+        buttons.append(
+            [
+                self.ikb(text="🔙", callback_data=f"player|{video_id}|{chat_id}"),
+                self.ikb(text="🗑", callback_data="close"),
+            ]
+        )
+        
+        return buttons
 
     def song_markup(self, rand_key, url, key):
         buttons = [
@@ -200,7 +227,6 @@ class MakeButtons:
                 self.ikb(text="🗑", callback_data=f"song_dl|close|{key}|{rand_key}"),
             ],
         ]
-
         return buttons
 
     def song_details_markup(self, url, ch_url):
