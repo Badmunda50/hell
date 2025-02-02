@@ -124,7 +124,7 @@ class HellMusic(PyTgCalls):
             try:
                 await self.music.change_stream(chat_id, stream)
             except (NoActiveGroupCall, NotInGroupCallError):
-                await self.join_vc(chat_id, file_path)
+                await self.join_vc(chat_id, file_path, playing[0]["vc_type"] == "video")
                 await self.music.change_stream(chat_id, stream)
         else:
             raise ValueError("File path mismatch")
@@ -134,6 +134,46 @@ class HellMusic(PyTgCalls):
         db_entry["bass_path"] = out
         db_entry["bass_level"] = bass_level
         await db.update_entry(chat_id, db_entry)
+
+    async def join_vc(self, chat_id: int, file_path: str, video: bool = False):
+        # define input stream
+        if video:
+            input_stream = AudioVideoPiped(
+                file_path, MediumQualityAudio(), MediumQualityVideo()
+            )
+        else:
+            input_stream = AudioPiped(file_path, MediumQualityAudio())
+
+        # join vc
+        try:
+            await self.music.join_group_call(
+                chat_id, input_stream, stream_type=StreamType().pulse_stream
+            )
+        except NoActiveGroupCall:
+            try:
+                await self.join_gc(chat_id)
+            except Exception as e:
+                await self.leave_vc(chat_id)
+                raise JoinGCException(e)
+            try:
+                await self.music.join_group_call(
+                    chat_id, input_stream, stream_type=StreamType().pulse_stream
+                )
+            except Exception as e:
+                await self.leave_vc(chat_id)
+                raise JoinVCException(f"[JoinVCException]: {e}")
+        except AlreadyJoinedError:
+            raise UserException(
+                f"[UserException]: Already joined in the voice chat. If this is a mistake then try to restart the voice chat."
+            )
+        except Exception as e:
+            raise UserException(f"[UserException]: {e}")
+
+        await db.add_active_vc(chat_id, "video" if video else "voice")
+        self.audience[chat_id] = {}
+        users = await self.vc_participants(chat_id)
+        user_ids = [user.user_id for user in users]
+        await self.autoend(chat_id, user_ids)
 
     async def speedup_stream(self, chat_id: int, file_path, speed, playing):
         if float(speed) != 1.0:
