@@ -135,13 +135,14 @@ async def handle_bassup(_, cb: CallbackQuery):
     
     # Check if the chat_id belongs to a group chat
     chat = await hellbot.app.get_chat(chat_id)
+    await cb.message.reply_text(f"Chat type: {chat.type}")
     if chat.type not in ['group', 'supergroup', 'channel']:
         return await cb.answer("Bass boost can only be applied in group chats!", show_alert=True)
     
     await hellmusic.bass_boost_stream(chat_id, current_song["file"], bass_level, que)
     await cb.answer(f"Bass level set to {bass_level}x", show_alert=True)
     await cb.message.reply_text(f"__Bass level set to {bass_level}x__ by: {cb.from_user.mention}")
-
+    
 @hellbot.app.on_message(
     filters.command(["mute", "unmute"]) & filters.group & ~Config.BANNED_USERS
 )
