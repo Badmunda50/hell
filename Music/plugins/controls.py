@@ -132,6 +132,11 @@ async def handle_bassup(_, cb: CallbackQuery):
     if not que:
         return await cb.answer("No songs in queue to boost bass!", show_alert=True)
     current_song = que[0]
+
+    # Remove chat type restriction
+    await hellmusic.bass_boost_stream(chat_id, current_song["file"], bass_level, que)
+    await cb.answer(f"Bass level set to {bass_level}x", show_alert=True)
+    await cb.message.reply_text(f"__Bass level set to {bass_level}x__ by: {cb.from_user.mention}")
     
     # Check if the chat_id belongs to a group chat
     chat = await hellbot.app.get_chat(chat_id)
