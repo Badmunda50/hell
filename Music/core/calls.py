@@ -2,6 +2,7 @@ import datetime
 import os
 import asyncio
 import subprocess
+from .database import db 
 
 from pyrogram.enums import ChatMemberStatus
 from pyrogram.errors import (
