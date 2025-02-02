@@ -281,31 +281,76 @@ class HellMusic(PyTgCalls):
         await self.autoend(chat_id, user_ids)
 
     async def speedup_stream(self, chat_id: int, file_path, speed, playing):
-    if float(speed) != 1.0:
+        if float(speed) != 1.0:
+            base = os.path.basename(file_path)
+            chatdir = os.path.join(os.getcwd(), "playback", str(speed))
+            if not os.path.isdir(chatdir):
+                os.makedirs(chatdir)
+            out = os.path.join(chatdir, base)
+            if not os.path.isfile(out):
+                if float(speed) == 0.5:
+                    vs = 2.0
+                elif float(speed) == 0.75:
+                    vs = 1.35
+                elif float(speed) == 1.5:
+                    vs = 0.68
+                elif float(speed) == 2.0:
+                    vs = 0.5
+                proc = await asyncio.create_subprocess_shell(
+                    cmd=(
+                        "ffmpeg "
+                        "-i "
+                        f"{file_path} "
+                        "-filter:v "
+                        f"setpts={vs}*PTS "
+                        "-filter:a "
+                        f"atempo={speed} "
+                        f"{out}"
+                    ),
+                    stdin=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
+                )
+                await proc.communicate()
+            else:
+                out = file_path
+            dur = await asyncio.get_event_loop().run_in_executor(None, check_duration, out)
+            dur = int(dur)
+            played, con_seconds = speed_converter(playing[0]["played"], speed)
+            duration = seconds_to_min(dur)
+            stream = (
+                AudioVideoPiped(
+                    out,
+                    MediumQualityAudio(),
+                    MediumQualityVideo(),
+                    additional_ffmpeg_parameters=f"-ss {played} -to {duration}",
+                )
+                if playing[0]["vc_type"] == "video"
+                else AudioPiped(
+                    out,
+                    MediumQualityAudio(),
+                    additional_ffmpeg_parameters=f"-ss {played} -to {duration}",
+                )
+            )
+            if db[chat_id][0]["file"] == file_path:
+                await self.music.change_stream(chat_id, stream)
+            else:
+                raise ValueError("File path mismatch")
+            db[chat_id][0]["played"] = con_seconds
+            db[chat_id][0]["duration"] = duration
+            db[chat_id][0]["seconds"] = dur
+            db[chat_id][0]["speed_path"] = out
+            db[chat_id][0]["speed"] = speed
+
+    async def bass_boost_stream(self, chat_id: int, file_path, bass_level, playing):
         base = os.path.basename(file_path)
-        chatdir = os.path.join(os.getcwd(), "playback", str(speed))
+        chatdir = os.path.join(os.getcwd(), "playback", "bass", str(bass_level))
         if not os.path.isdir(chatdir):
             os.makedirs(chatdir)
         out = os.path.join(chatdir, base)
         if not os.path.isfile(out):
-            if float(speed) == 0.5:
-                vs = 2.0
-            elif float(speed) == 0.75:
-                vs = 1.35
-            elif float(speed) == 1.5:
-                vs = 0.68
-            elif float(speed) == 2.0:
-                vs = 0.5
             proc = await asyncio.create_subprocess_shell(
                 cmd=(
-                    "ffmpeg "
-                    "-i "
-                    f"{file_path} "
-                    "-filter:v "
-                    f"setpts={vs}*PTS "
-                    "-filter:a "
-                    f"atempo={speed} "
-                    f"{out}"
+                    f"ffmpeg -i {file_path} -af 'bass=g={bass_level}' {out}"
                 ),
                 stdin=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
@@ -315,7 +360,7 @@ class HellMusic(PyTgCalls):
             out = file_path
         dur = await asyncio.get_event_loop().run_in_executor(None, check_duration, out)
         dur = int(dur)
-        played, con_seconds = speed_converter(playing[0]["played"], speed)
+        played = playing[0].get("played", 0)
         duration = seconds_to_min(dur)
         stream = (
             AudioVideoPiped(
@@ -335,56 +380,11 @@ class HellMusic(PyTgCalls):
             await self.music.change_stream(chat_id, stream)
         else:
             raise ValueError("File path mismatch")
-        db[chat_id][0]["played"] = con_seconds
+        db[chat_id][0]["played"] = played
         db[chat_id][0]["duration"] = duration
         db[chat_id][0]["seconds"] = dur
-        db[chat_id][0]["speed_path"] = out
-        db[chat_id][0]["speed"] = speed
-
-async def bass_boost_stream(self, chat_id: int, file_path, bass_level, playing):
-    base = os.path.basename(file_path)
-    chatdir = os.path.join(os.getcwd(), "playback", "bass", str(bass_level))
-    if not os.path.isdir(chatdir):
-        os.makedirs(chatdir)
-    out = os.path.join(chatdir, base)
-    if not os.path.isfile(out):
-        proc = await asyncio.create_subprocess_shell(
-            cmd=(
-                f"ffmpeg -i {file_path} -af 'bass=g={bass_level}' {out}"
-            ),
-            stdin=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
-        await proc.communicate()
-    else:
-        out = file_path
-    dur = await asyncio.get_event_loop().run_in_executor(None, check_duration, out)
-    dur = int(dur)
-    played = playing[0].get("played", 0)
-    duration = seconds_to_min(dur)
-    stream = (
-        AudioVideoPiped(
-            out,
-            MediumQualityAudio(),
-            MediumQualityVideo(),
-            additional_ffmpeg_parameters=f"-ss {played} -to {duration}",
-        )
-        if playing[0]["vc_type"] == "video"
-        else AudioPiped(
-            out,
-            MediumQualityAudio(),
-            additional_ffmpeg_parameters=f"-ss {played} -to {duration}",
-        )
-    )
-    if db[chat_id][0]["file"] == file_path:
-        await self.music.change_stream(chat_id, stream)
-    else:
-        raise ValueError("File path mismatch")
-    db[chat_id][0]["played"] = played
-    db[chat_id][0]["duration"] = duration
-    db[chat_id][0]["seconds"] = dur
-    db[chat_id][0]["bass_path"] = out
-    db[chat_id][0]["bass_level"] = bass_level
+        db[chat_id][0]["bass_path"] = out
+        db[chat_id][0]["bass_level"] = bass_level
 
     async def autoclean(self, file: str):
         # Ensure file is a string
