@@ -1,5 +1,5 @@
 from pyrogram import filters
-from pyrogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup
+from pyrogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery  # Add CallbackQuery here
 
 from config import Config
 from Music.core.calls import hellmusic
