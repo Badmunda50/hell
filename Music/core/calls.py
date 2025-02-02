@@ -64,7 +64,6 @@ def seconds_to_min(seconds):
     return f"{int(mins)}:{int(secs):02d}"
 
 
-
 class Database(object):
     # existing code...
 
@@ -83,8 +82,7 @@ class HellMusic(PyTgCalls):
         self.music = PyTgCalls(hellbot.user)
         self.audience = {}
 
-
-        async def bass_boost_stream(self, chat_id: int, file_path, bass_level, playing):
+    async def bass_boost_stream(self, chat_id: int, file_path, bass_level, playing):
         base = os.path.basename(file_path)
         chatdir = os.path.join(os.getcwd(), "playback", "bass", str(bass_level))
         if not os.path.isdir(chatdir):
