@@ -3,6 +3,7 @@ import random
 import requests
 from pyrogram import filters
 from pyrogram.types import CallbackQuery, InlineKeyboardMarkup, Message
+from typing_extensions import Annotated
 from jiosaavn import JioSaavnAPI  # Make sure to install jiosaavn library
 
 from config import Config
