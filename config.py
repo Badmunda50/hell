@@ -9,11 +9,11 @@ class Config(object):
     # required config variables
     API_HASH = "b35b715fe8dc0a58e8048988286fc5b6"             # get from my.telegram.org
     API_ID = 25742938                # get from my.telegram.org
-    BOT_TOKEN = "7614786681:AAEqGbq3jQ3XK3Nx9JmGLN8_SNOjUwpWQ9Q"              # get from @BotFather
+    BOT_TOKEN = "7693811299:AAGHUfvr3OHMsOeOMBBUwycSGsQ3-dhKCHE"              # get from @BotFather
     DATABASE_URL = "mongodb+srv://BADMUNDA:BADMYDAD@badhacker.i5nw9na.mongodb.net/"     # from https://cloud.mongodb.com/
-    HELLBOT_SESSION = "BQGIzloAr4p6_F7Pio7Jirj1-_ry579AlrwJaurALELnkENhuRsZoZm4wEaKI6jlp5kSkFURVPDLzWVwy25Kp8OF0VhuWufeItruEenA9S6hl0EgJmmhz5ZVyMtLLt8dwc15tG-bUEKYUQo_lOE1R9xU8h0CLIlRrkuXG4yaDbz5Hly-kyqYRM69oOUqzQ1J234_n3K-6a55uZvOZSyd2hjKW4kh9LzHAcaYptaNqOnrP1cwogr8Cs7gOl02cohpIfPvKQ6UmSa2-HBScwsdW5Yypv3LUWJx96AHTCNliNy6OG6gwJbCchBNFfNdwZQ2Vu7tpxp52hsoP7IpkP_5RIWSU4lecQAAAAGyMKeQAA"  # enter your session string here
+    HELLBOT_SESSION = "BQGIzloAfTzsHcVU6ZeD55a-1vlAm8VbeoLXHNdFya6IsRY4Aq9oE9VdzVOr1vaVF96qvaJ81fBc5KvVxwSXEwk0FBy7kbFO3yFw8Tey8vPkrFX0UmnhMcHpp0_77l2gF2wZ2t2crJNQpAgJFcq-TLQWSPU3cgTc6202iyRFHvGuC-e8mPLhN3OCE4qPdBH8ggwCAl2JekXKAAAqn6zpmJXt7iOksGPZExqNRPqM4KDGPyDJ2MAzKhtGa4WKqnk-Gp8a71QXWLAqJhdu717Bd4shI7y1m3JV6POJKxV-_dYWINXU3lQtg1zOotw4hdhHJ6cSH7gzSqPG4ZrYmByjP7aci-1i4QAAAAG82-HiAA"  # enter your session string here
     LOGGER_ID = -1002093247039         # make a channel and get its ID
-    OWNER_ID = getenv("OWNER_ID", "7009601543")              # enter your id here
+    OWNER_ID = getenv("OWNER_ID", "7588172591")              # enter your id here
 
     # optional config variables
     BLACK_IMG = getenv("BLACK_IMG", "https://telegra.ph/file/2c546060b20dfd7c1ff2d.jpg")        # black image for progress
