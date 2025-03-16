@@ -43,7 +43,6 @@ from .clients import hellbot
 from .database import db
 from .logger import LOGS
 
-# Assuming StreamType is from ntgcalls
 from ntgcalls import StreamType
 
 async def __clean__(chat_id: int, force: bool):
@@ -71,10 +70,10 @@ class HellMusic(PyTgCalls):
             input_stream = MediaStream(
                 file_path, AudioQuality.MEDIUM, VideoQuality.MEDIUM
             )
-            stream_type = StreamType.VIDEO_STREAM
+            stream_type = StreamType().video_stream
         else:
             input_stream = MediaStream(file_path, AudioQuality.MEDIUM)
-            stream_type = StreamType.PULSE_STREAM  # Fixed this line
+            stream_type = StreamType().pulse_stream  # Fixed this line
 
         # Join VC
         try:
