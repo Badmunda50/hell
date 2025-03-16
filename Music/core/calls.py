@@ -58,6 +58,12 @@ class HellMusic(PyTgCalls):
         super().__init__(hellbot.user)
         self.audience = {}
 
+    async def join_call(self, chat_id: int, input_stream, stream_type):
+        try:
+            await self.join_group_call(chat_id, input_stream, stream_type=stream_type)
+        except Exception as e:
+            raise UserException(f"[UserException]: {e}")
+
     async def autoend(self, chat_id: int, users: list):
         autoend = await db.get_autoend()
         if autoend:
@@ -291,16 +297,6 @@ class HellMusic(PyTgCalls):
         users = await self.vc_participants(chat_id)
         user_ids = [user.user_id for user in users]
         await self.autoend(chat_id, user_ids)
-
-    async def autoclean(self, file: str):
-        # Ensure file is a string
-        if isinstance(file, str):
-            try:
-                os.remove(file)
-                os.remove(f"downloads/{file}.webm")
-                os.remove(f"downloads/{file}.mp4")
-            except:
-                pass
 
     async def join_gc(self, chat_id: int):
         try:
