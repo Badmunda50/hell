@@ -242,58 +242,47 @@ class HellMusic(PyTgCalls):
             except Exception as e:
                 raise ChangeVCException(f"[ChangeVCException]: {e}")
 
-    async def join_call(
-        self,
-        chat_id: int,
-        original_chat_id: int,
-        link,
-        video: Union[bool, str] = None,
-        image: Union[bool, str] = None,
-    ):
-        assistant = await group_assistant(self, chat_id)
-        language = await get_lang(chat_id)
-        _ = get_string(language)
-        if video:
-            stream = MediaStream(
-                link,
-                AudioQuality.STUDIO,
-                VideoQuality.HD_720p,
-            )
-        else:
-            stream = (
-                MediaStream(
-                    link,
-                    AudioQuality.STUDIO,
-                    VideoQuality.HD_720p,
-                )
-                if video
-                else MediaStream(
-                    link, 
-                    AudioQuality.STUDIO,
-                    video_flags=MediaStream.Flags.IGNORE,
-                )
-            )
-        try:
-            await assistant.play(
-                chat_id,
-                stream,
-            )
-        except NoActiveGroupCall:
-            raise AssistantErr(_["call_8"])
-        except AlreadyJoinedError:
-            raise AssistantErr(_["call_9"])
-        except TelegramServerError:
-            raise AssistantErr(_["call_10"])
-        await add_active_chat(chat_id)
-        await music_on(chat_id)
-        if video:
-            await add_active_video_chat(chat_id)
-        if await is_autoend():
-            counter[chat_id] = {}
-            users = len(await assistant.get_participants(chat_id))
-            if users == 1:
-                autoend[chat_id] = datetime.now() + timedelta(minutes=1)
+    async def join_vc(self, chat_id: int, file_path: str, video: bool = False):
+    # define input stream
+    if video:
+        input_stream = MediaStream(
+            file_path, AudioQuality.MEDIUM, VideoQuality.MEDIUM
+        )
+    else:
+        input_stream = MediaStream(file_path, AudioQuality.MEDIUM)
 
+    # join vc
+    try:
+        await self.music.join_group_call(
+            chat_id, 
+            input_stream
+        )
+    except NoActiveGroupCall:
+        try:
+            await self.join_gc(chat_id)
+        except Exception as e:
+            await self.leave_vc(chat_id)
+            raise JoinGCException(e)
+        try:
+            await self.music.join_group_call(
+                chat_id, 
+                input_stream
+            )
+        except Exception as e:
+            await self.leave_vc(chat_id)
+            raise JoinVCException(f"[JoinVCException]: {e}")
+    except AlreadyJoinedError:
+        raise UserException(
+            f"[UserException]: Already joined in the voice chat. If this is a mistake then try to restart the voice chat."
+        )
+    except Exception as e:
+        raise UserException(f"[UserException]: {e}")
+
+    await db.add_active_vc(chat_id, "video" if video else "voice")
+    self.audience[chat_id] = {}
+    users = await self.vc_participants(chat_id)
+    user_ids = [user.user_id for user in users]
+    await self.autoend(chat_id, user_ids)
     
     async def autoclean(self, file: str):
         # Ensure file is a string
