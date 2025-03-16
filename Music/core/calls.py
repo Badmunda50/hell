@@ -1,28 +1,23 @@
-import asyncio
+import datetime
 import os
-from datetime import datetime, timedelta
-from typing import Union
 
-from pyrogram import Client
+from pyrogram.enums import ChatMemberStatus
+from pyrogram.errors import (
+    ChatAdminRequired,
+    UserAlreadyParticipant,
+    UserNotParticipant,
+)
 from pyrogram.types import InlineKeyboardMarkup
+from ntgcalls import StreamType
 from pytgcalls import PyTgCalls, filters
 from pytgcalls.exceptions import (
     AlreadyJoinedError,
     NoActiveGroupCall,
 )
-from ntgcalls import TelegramServerError
-from pytgcalls.types import (
-    GroupCallParticipant,
-    MediaStream,
-    ChatUpdate, 
-    Update,
-)
 from pytgcalls.types import (
     AudioQuality, 
     VideoQuality,
 )
-from pytgcalls.types.stream import StreamAudioEnded
-
 from config import Config
 from Music.helpers.buttons import Buttons
 from Music.helpers.strings import TEXTS
@@ -32,6 +27,15 @@ from Music.utils.exceptions import (
     JoinVCException,
     UserException,
 )
+from ntgcalls import TelegramServerError
+from pytgcalls.types import (
+    GroupCallParticipant,
+    MediaStream,
+    ChatUpdate, 
+    Update,
+)
+from pytgcalls.types.stream import StreamAudioEnded
+
 from Music.utils.queue import Queue
 from Music.utils.thumbnail import thumb
 from Music.utils.youtube import ytube
@@ -51,7 +55,7 @@ async def __clean__(chat_id: int, force: bool):
 
 class HellMusic(PyTgCalls):
     def __init__(self):
-        self.music = PyTgCalls(hellbot.user)
+        super().__init__(hellbot.user)
         self.audience = {}
 
     async def autoend(self, chat_id: int, users: list):
@@ -60,7 +64,9 @@ class HellMusic(PyTgCalls):
             if len(users) == 1:
                 get = await hellbot.app.get_users(users[0])
                 if get.id == hellbot.user.id:
-                    db.inactive[chat_id] = datetime.now() + timedelta(minutes=5)
+                    db.inactive[chat_id] = datetime.datetime.now() + datetime.timedelta(
+                        minutes=5
+                    )
             else:
                 db.inactive[chat_id] = {}
 
@@ -73,38 +79,44 @@ class HellMusic(PyTgCalls):
             pass
 
     async def start(self):
-        LOGS.info("Booting PyTgCalls Client...")
+        LOGS.info(
+            "\x3e\x3e\x20\x42\x6f\x6f\x74\x69\x6e\x67\x20\x50\x79\x54\x67\x43\x61\x6c\x6c\x73\x20\x43\x6c\x69\x65\x6e\x74\x2e\x2e\x2e"
+        )
         if Config.HELLBOT_SESSION:
-            await self.music.start()
-            LOGS.info("Booted PyTgCalls Client!")
+            await super().start()
+            LOGS.info(
+                "\x3e\x3e\x20\x42\x6f\x6f\x74\x65\x64\x20\x50\x79\x54\x67\x43\x61\x6c\x6c\x73\x20\x43\x6c\x69\x65\x6e\x74\x21"
+            )
         else:
-            LOGS.error("PyTgCalls Client not booted!")
+            LOGS.error(
+                "\x3e\x3e\x20\x50\x79\x54\x67\x43\x61\x6c\x6c\x73\x20\x43\x6c\x69\x65\x6e\x74\x20\x6e\x6f\x74\x20\x62\x6f\x6f\x74\x65\x64\x21"
+            )
             quit(1)
 
     async def ping(self):
-        pinged = await self.music.ping
+        pinged = await self.ping
         return pinged
 
     async def vc_participants(self, chat_id: int):
-        users = await self.music.get_participants(chat_id)
+        users = await self.get_participants(chat_id)
         return users
 
     async def mute_vc(self, chat_id: int):
-        await self.music.mute_stream(chat_id)
+        await self.mute_stream(chat_id)
 
     async def unmute_vc(self, chat_id: int):
-        await self.music.unmute_stream(chat_id)
+        await self.unmute_stream(chat_id)
 
     async def pause_vc(self, chat_id: int):
-        await self.music.pause_stream(chat_id)
+        await self.pause_stream(chat_id)
 
     async def resume_vc(self, chat_id: int):
-        await self.music.resume_stream(chat_id)
+        await self.resume_stream(chat_id)
 
     async def leave_vc(self, chat_id: int, force: bool = False):
         try:
             await __clean__(chat_id, force)
-            await self.music.leave_group_call(chat_id)
+            await self.leave_group_call(chat_id)
         except:
             pass
         previous = Config.PLAYER_CACHE.get(chat_id)
@@ -129,7 +141,7 @@ class HellMusic(PyTgCalls):
                 AudioQuality.MEDIUM,
                 additional_ffmpeg_parameters=f"-ss {to_seek} -to {duration}",
             )
-        await self.music.change_stream(chat_id, input_stream)
+        await self.change_stream(chat_id, input_stream)
 
     async def invited_vc(self, chat_id: int):
         try:
@@ -146,7 +158,7 @@ class HellMusic(PyTgCalls):
             )
         else:
             input_stream = MediaStream(file_path, AudioQuality.MEDIUM)
-        await self.music.change_stream(chat_id, input_stream)
+        await self.change_stream(chat_id, input_stream)
 
     async def change_vc(self, chat_id: int):
         try:
@@ -181,11 +193,9 @@ class HellMusic(PyTgCalls):
             if tg:
                 to_stream = queue
             else:
-                to_stream, _ = await ytube.download(
+                to_stream = await ytube.download(
                     video_id, True, True if vc_type == "video" else False
                 )
-            if not os.path.exists(to_stream):
-                raise ChangeVCException(f"File not found: {to_stream}")
             if vc_type == "video":
                 input_stream = MediaStream(
                     to_stream, AudioQuality.MEDIUM, VideoQuality.MEDIUM
@@ -194,7 +204,7 @@ class HellMusic(PyTgCalls):
                 input_stream = MediaStream(to_stream, AudioQuality.MEDIUM)
             try:
                 photo = thumb.generate((359), (297, 302), video_id)
-                await self.music.change_stream(int(chat_id), input_stream)
+                await self.change_stream(int(chat_id), input_stream)
                 btns = Buttons.player_markup(
                     chat_id,
                     "None" if video_id == "telegram" else video_id,
@@ -253,9 +263,8 @@ class HellMusic(PyTgCalls):
 
         # join vc
         try:
-            await self.music.join_group_call(
-                chat_id, 
-                input_stream
+            await self.join_call(
+                chat_id, input_stream, stream_type=StreamType().pulse_stream
             )
         except NoActiveGroupCall:
             try:
@@ -264,9 +273,8 @@ class HellMusic(PyTgCalls):
                 await self.leave_vc(chat_id)
                 raise JoinGCException(e)
             try:
-                await self.music.join_group_call(
-                    chat_id, 
-                    input_stream
+                await self.join_call(
+                    chat_id, input_stream, stream_type=StreamType().pulse_stream
                 )
             except Exception as e:
                 await self.leave_vc(chat_id)
@@ -283,7 +291,7 @@ class HellMusic(PyTgCalls):
         users = await self.vc_participants(chat_id)
         user_ids = [user.user_id for user in users]
         await self.autoend(chat_id, user_ids)
-    
+
     async def autoclean(self, file: str):
         # Ensure file is a string
         if isinstance(file, str):
@@ -342,5 +350,43 @@ class HellMusic(PyTgCalls):
                 except Exception as e:
                     raise UserException(f"[UserException]: {e}")
 
+    async def decorators(self):
+        @self.on_update(filters.chat_update(ChatUpdate.Status.KICKED))
+        async def on_kicked(update: Update):
+            chat_id = update.chat_id
+            await self.leave_vc(chat_id)
+            await db.set_loop(chat_id, 0)
+
+        @self.on_update(filters.chat_update(ChatUpdate.Status.LEFT))
+        async def on_left(update: Update):
+            chat_id = update.chat_id
+            await self.leave_vc(chat_id)
+            await db.set_loop(chat_id, 0)
+
+        @self.on_update(filters.stream_end())
+        async def on_stream_end(update: Update):
+            if isinstance(update, StreamAudioEnded):
+                await self.change_vc(update.chat_id)
+
+        @self.on_update(filters.participants_change())
+        async def on_participants_change(update: Update):
+            try:
+                chat_id = update.chat_id
+                audience = self.audience.get(chat_id)
+                users = await self.vc_participants(chat_id)
+                user_ids = [user.user_id for user in users]
+                if not audience:
+                    await self.autoend(chat_id, user_ids)
+                else:
+                    new = (
+                        audience + 1
+                        if update.user_was_added
+                        else audience - 1
+                    )
+                    self.audience[chat_id] = new
+                    await self.autoend(chat_id, user_ids)
+            except:
+                return
 
 hellmusic = HellMusic()
+hellmusic.decorators()
