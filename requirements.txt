@@ -22,8 +22,8 @@ multidict==6.0.4
 mutagen==1.46.0
 Pillow
 psutil==5.9.5
-py-tgcalls==1.2.9
-ntgcalls==1.1.2
+py-tgcalls==2.0.6
+ ntgcalls==1.2.3
 pyaes==1.6.1
 pycryptodomex==3.18.0
 pymongo==4.4.0
