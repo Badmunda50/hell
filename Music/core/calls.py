@@ -8,7 +8,6 @@ from pyrogram.errors import (
     UserNotParticipant,
 )
 from pyrogram.types import InlineKeyboardMarkup
-from ntgcalls import StreamType
 from pytgcalls import PyTgCalls, filters
 from pytgcalls.exceptions import (
     AlreadyJoinedError,
@@ -44,6 +43,11 @@ from .clients import hellbot
 from .database import db
 from .logger import LOGS
 
+# Assuming StreamType is from ntgcalls
+from ntgcalls import StreamType
+
+# Initialize StreamType with the appropriate value
+stream_type = StreamType(value=1)  # Replace `1` with the appropriate value
 
 async def __clean__(chat_id: int, force: bool):
     if force:
