@@ -1,17 +1,27 @@
-import datetime
+import asyncio
 import os
+from datetime import datetime, timedelta
+from typing import Union
 
-from pyrogram.enums import ChatMemberStatus
-from pyrogram.errors import (
-    ChatAdminRequired,
-    UserAlreadyParticipant,
-    UserNotParticipant,
-)
+from pyrogram import Client
 from pyrogram.types import InlineKeyboardMarkup
-from pytgcalls import PyTgCalls, StreamType
-from pytgcalls.exceptions import AlreadyJoinedError, NoActiveGroupCall
-from pytgcalls.types.input_stream import AudioPiped, AudioVideoPiped
-from pytgcalls.types.input_stream.quality import MediumQualityAudio, MediumQualityVideo
+from pytgcalls import PyTgCalls, filters
+from pytgcalls.exceptions import (
+    AlreadyJoinedError,
+    NoActiveGroupCall,
+)
+from ntgcalls import TelegramServerError
+from pytgcalls.types import (
+    GroupCallParticipant,
+    MediaStream,
+    ChatUpdate, 
+    Update,
+)
+from pytgcalls.types import (
+    AudioQuality, 
+    VideoQuality,
+)
+from pytgcalls.types.stream import StreamAudioEnded
 
 from config import Config
 from Music.helpers.buttons import Buttons
@@ -50,9 +60,7 @@ class HellMusic(PyTgCalls):
             if len(users) == 1:
                 get = await hellbot.app.get_users(users[0])
                 if get.id == hellbot.user.id:
-                    db.inactive[chat_id] = datetime.datetime.now() + datetime.timedelta(
-                        minutes=5
-                    )
+                    db.inactive[chat_id] = datetime.now() + timedelta(minutes=5)
             else:
                 db.inactive[chat_id] = {}
 
@@ -65,18 +73,12 @@ class HellMusic(PyTgCalls):
             pass
 
     async def start(self):
-        LOGS.info(
-            "\x3e\x3e\x20\x42\x6f\x6f\x74\x69\x6e\x67\x20\x50\x79\x54\x67\x43\x61\x6c\x6c\x73\x20\x43\x6c\x69\x65\x6e\x74\x2e\x2e\x2e"
-        )
+        LOGS.info("Booting PyTgCalls Client...")
         if Config.HELLBOT_SESSION:
             await self.music.start()
-            LOGS.info(
-                "\x3e\x3e\x20\x42\x6f\x6f\x74\x65\x64\x20\x50\x79\x54\x67\x43\x61\x6c\x6c\x73\x20\x43\x6c\x69\x65\x6e\x74\x21"
-            )
+            LOGS.info("Booted PyTgCalls Client!")
         else:
-            LOGS.error(
-                "\x3e\x3e\x20\x50\x79\x54\x67\x43\x61\x6c\x6c\x73\x20\x43\x6c\x69\x65\x6e\x74\x20\x6e\x6f\x74\x20\x62\x6f\x6f\x74\x65\x64\x21"
-            )
+            LOGS.error("PyTgCalls Client not booted!")
             quit(1)
 
     async def ping(self):
@@ -115,16 +117,16 @@ class HellMusic(PyTgCalls):
     async def seek_vc(self, context: dict):
         chat_id, file_path, duration, to_seek, video = context.values()
         if video:
-            input_stream = AudioVideoPiped(
+            input_stream = MediaStream(
                 file_path,
-                MediumQualityAudio(),
-                MediumQualityVideo(),
+                AudioQuality.MEDIUM,
+                VideoQuality.MEDIUM,
                 additional_ffmpeg_parameters=f"-ss {to_seek} -to {duration}",
             )
         else:
-            input_stream = AudioPiped(
+            input_stream = MediaStream(
                 file_path,
-                MediumQualityAudio(),
+                AudioQuality.MEDIUM,
                 additional_ffmpeg_parameters=f"-ss {to_seek} -to {duration}",
             )
         await self.music.change_stream(chat_id, input_stream)
@@ -139,11 +141,11 @@ class HellMusic(PyTgCalls):
 
     async def replay_vc(self, chat_id: int, file_path: str, video: bool = False):
         if video:
-            input_stream = AudioVideoPiped(
-                file_path, MediumQualityAudio(), MediumQualityVideo()
+            input_stream = MediaStream(
+                file_path, AudioQuality.MEDIUM, VideoQuality.MEDIUM
             )
         else:
-            input_stream = AudioPiped(file_path, MediumQualityAudio())
+            input_stream = MediaStream(file_path, AudioQuality.MEDIUM)
         await self.music.change_stream(chat_id, input_stream)
 
     async def change_vc(self, chat_id: int):
@@ -185,11 +187,11 @@ class HellMusic(PyTgCalls):
             if not os.path.exists(to_stream):
                 raise ChangeVCException(f"File not found: {to_stream}")
             if vc_type == "video":
-                input_stream = AudioVideoPiped(
-                    to_stream, MediumQualityAudio(), MediumQualityVideo()
+                input_stream = MediaStream(
+                    to_stream, AudioQuality.MEDIUM, VideoQuality.MEDIUM
                 )
             else:
-                input_stream = AudioPiped(to_stream, MediumQualityAudio())
+                input_stream = MediaStream(to_stream, AudioQuality.MEDIUM)
             try:
                 photo = thumb.generate((359), (297, 302), video_id)
                 await self.music.change_stream(int(chat_id), input_stream)
@@ -243,16 +245,16 @@ class HellMusic(PyTgCalls):
     async def join_vc(self, chat_id: int, file_path: str, video: bool = False):
         # define input stream
         if video:
-            input_stream = AudioVideoPiped(
-                file_path, MediumQualityAudio(), MediumQualityVideo()
+            input_stream = MediaStream(
+                file_path, AudioQuality.MEDIUM, VideoQuality.MEDIUM
             )
         else:
-            input_stream = AudioPiped(file_path, MediumQualityAudio())
+            input_stream = MediaStream(file_path, AudioQuality.MEDIUM)
 
         # join vc
         try:
             await self.music.join_group_call(
-                chat_id, input_stream, stream_type=StreamType().pulse_stream
+                chat_id, input_stream, stream_type=filters.pulse_stream
             )
         except NoActiveGroupCall:
             try:
@@ -262,7 +264,7 @@ class HellMusic(PyTgCalls):
                 raise JoinGCException(e)
             try:
                 await self.music.join_group_call(
-                    chat_id, input_stream, stream_type=StreamType().pulse_stream
+                    chat_id, input_stream, stream_type=filters.pulse_stream
                 )
             except Exception as e:
                 await self.leave_vc(chat_id)
