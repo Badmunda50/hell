@@ -20,7 +20,7 @@ lyricsgenius==3.0.1
 motor==3.2.0
 multidict==6.0.4
 mutagen==1.46.0
-Pillow==9.5.0
+Pillow
 psutil==5.9.5
 py-tgcalls==1.2.9
 ntgcalls==1.1.2
