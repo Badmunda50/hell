@@ -16,7 +16,7 @@ from Music.utils.play import player
 from Music.utils.queue import Queue
 from Music.utils.thumbnail import thumb
 from Music.utils.youtube import ytube
-
+from Music.utils.jiosaavn import JioSaavnAPI  # Import JioSaavnAPI
 
 @hellbot.app.on_message(
     filters.command(["play", "vplay", "fplay", "fvplay"])
@@ -39,6 +39,9 @@ async def play_music(_, message: Message, context: dict):
     # initialise variables
     video, force, url, tgaud, tgvid = context.values()
     play_limit = formatter.mins_to_secs(f"{Config.PLAY_LIMIT}:00")
+
+    # JioSaavn Integration
+    jio_saavn_api = JioSaavnAPI()
 
     # if the user replied to a message and that message is an audio file
     if tgaud:
@@ -114,11 +117,16 @@ async def play_music(_, message: Message, context: dict):
             await hell.edit("Searching ...")
             result = await ytube.get_data(url, False)
         except Exception as e:
-            return await hell.edit(f"**Error:**\n`{e}`")
+            # If YouTube search fails, try JioSaavn
+            jiosaavn_result = await jio_saavn_api.search_song(url)
+            if not jiosaavn_result:
+                return await hell.edit(f"**Error:**\n`{e}`")
+            result = [jiosaavn_result]  # Convert to list to maintain compatibility with existing code
+
         context = {
             "chat_id": message.chat.id,
             "user_id": message.from_user.id,
-            "duration": result[0]["duration"],
+            "duration": result[0]["duration"] if "duration" in result[0] else "Unknown",
             "file": result[0]["id"],
             "title": result[0]["title"],
             "user": message.from_user.mention,
@@ -135,11 +143,16 @@ async def play_music(_, message: Message, context: dict):
         await hell.edit("Searching ...")
         result = await ytube.get_data(query, False)
     except Exception as e:
-        return await hell.edit(f"**Error:**\n`{e}`")
+        # If YouTube search fails, try JioSaavn
+        jiosaavn_result = await jio_saavn_api.search_song(query)
+        if not jiosaavn_result:
+            return await hell.edit(f"**Error:**\n`{e}`")
+        result = [jiosaavn_result]  # Convert to list to maintain compatibility with existing code
+
     context = {
         "chat_id": message.chat.id,
         "user_id": message.from_user.id,
-        "duration": result[0]["duration"],
+        "duration": result[0]["duration"] if "duration" in result[0] else "Unknown",
         "file": result[0]["id"],
         "title": result[0]["title"],
         "user": message.from_user.mention,
@@ -148,82 +161,3 @@ async def play_music(_, message: Message, context: dict):
         "force": force,
     }
     await player.play(hell, context)
-
-
-@hellbot.app.on_message(
-    filters.command(["current", "playing"]) & filters.group & ~Config.BANNED_USERS
-)
-@UserWrapper
-async def playing(_, message: Message):
-    chat_id = message.chat.id
-    is_active = await db.is_active_vc(chat_id)
-    if not is_active:
-        return await message.reply_text("No active voice chat found here.")
-    que = Queue.get_current(chat_id)
-    if not que:
-        return await message.reply_text("Nothing is playing here.")
-    photo = thumb.generate((359), (297, 302), que["video_id"])
-    btns = Buttons.player_markup(chat_id, que["video_id"], hellbot.app.username)
-    to_send = TEXTS.PLAYING.format(
-        hellbot.app.mention,
-        que["title"],
-        que["duration"],
-        que["user"],
-    )
-    if photo:
-        sent = await message.reply_photo(
-            photo, caption=to_send, reply_markup=InlineKeyboardMarkup(btns)
-        )
-    else:
-        sent = await message.reply_text(
-            to_send, reply_markup=InlineKeyboardMarkup(btns)
-        )
-    previous = Config.PLAYER_CACHE.get(chat_id)
-    if previous:
-        try:
-            await previous.delete()
-        except Exception:
-            pass
-    Config.PLAYER_CACHE[chat_id] = sent
-
-
-@hellbot.app.on_message(
-    filters.command(["queue", "que", "q"]) & filters.group & ~Config.BANNED_USERS
-)
-@UserWrapper
-async def queued_tracks(_, message: Message):
-    hell = await message.reply_text("Getting Queue...")
-    chat_id = message.chat.id
-    is_active = await db.is_active_vc(chat_id)
-    if not is_active:
-        return await hell.edit_text("No active voice chat found here.")
-    collection = Queue.get_queue(chat_id)
-    if not collection:
-        return await hell.edit_text("Nothing is playing here.")
-    await MakePages.queue_page(hell, collection, 0, 0, True)
-
-
-@hellbot.app.on_message(filters.command(["clean", "reload"]) & ~Config.BANNED_USERS)
-@AuthWrapper
-async def clean_queue(_, message: Message):
-    Queue.clear_queue(message.chat.id)
-    hell = await message.reply_text("**Cleared Queue.**")
-    await asyncio.sleep(10)
-    await hell.delete()
-
-
-@hellbot.app.on_callback_query(filters.regex(r"queue") & ~Config.BANNED_USERS)
-async def queued_tracks_cb(_, cb: CallbackQuery):
-    _, action, page = cb.data.split("|")
-    key = int(page)
-    collection = Queue.get_queue(cb.message.chat.id)
-    length, _ = formatter.group_the_list(collection, 5, True)
-    length -= 1
-    if key == 0 and action == "prev":
-        new_page = length
-    elif key == length and action == "next":
-        new_page = 0
-    else:
-        new_page = key + 1 if action == "next" else key - 1
-    index = new_page * 5
-    await MakePages.queue_page(cb.message, collection, new_page, index, True)
