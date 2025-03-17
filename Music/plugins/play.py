@@ -164,7 +164,7 @@ async def play_music(_, message: Message, context: dict):
         else:
             duration_str = "Unknown"
 
-        # **Fix: Ensure valid URL is used**
+        # Ensure valid URL is used
         song_url = result.get("url")
         if not song_url:
             song_url = f"ytsearch:{result['title']}"  # Fallback to YouTube search
