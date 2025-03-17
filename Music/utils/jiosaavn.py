@@ -74,3 +74,16 @@ class JioSaavnAPI:
             return "Song not found or error occurred!"
         
         return f"Now playing: {song_path}"
+
+
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
+# In the except block:
+except Exception as e:
+    logging.debug(f"YouTube failed with error: {e}")
+    await hell.edit("YouTube cookies failed, trying JioSaavn...")
+    jiosaavn_result = await jio_saavn_api.search_song(query)
+    logging.debug(f"JioSaavn result: {jiosaavn_result}")
+    if not jiosaavn_result:
+        return await hell.edit("Song not found on JioSaavn either.")
