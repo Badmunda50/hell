@@ -94,5 +94,3 @@ async def main():
     except Exception as e:
         logging.debug(f"An error occurred: {e}")
 
-# Run the main function
-asyncio.run(main())
