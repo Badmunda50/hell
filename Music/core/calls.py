@@ -83,7 +83,6 @@ class HellMusic(PyTgCalls):
         self.music = PyTgCalls(hellbot.user)
         self.audience = {}
 
-from pytgcalls.types import StreamType
 
 async def join_vc(self, chat_id: int, file_path: str, video: bool = False):
     if not await self._is_valid_group_chat(chat_id):
