@@ -1,5 +1,9 @@
 import asyncio
 import aiohttp
+import os
+import time
+import re
+from typing import Union
 from bs4 import BeautifulSoup
 import logging
 
@@ -7,7 +11,31 @@ class JioSaavnAPI:
     def __init__(self):
         self.base = "https://www.jiosaavn.com"
         self.regex = r"(?:jiosaavn\.com)"
-    
+        self.audio_opts = {"format": "bestaudio[ext=m4a]"}
+        self.video_opts = {
+            "format": "best",
+            "addmetadata": True,
+            "key": "FFmpegMetadata",
+            "prefer_ffmpeg": True,
+            "geo_bypass": True,
+            "nocheckcertificate": True,
+            "postprocessors": [
+                {"key": "FFmpegVideoConvertor", "preferedformat": "mp4"}
+            ],
+            "outtmpl": "%(id)s.mp4",
+            "logtostderr": False,
+            "quiet": True,
+        }
+
+    def check(self, link: str):
+        return bool(re.match(self.regex, link))
+
+    async def format_link(self, link: str) -> str:
+        link = link.strip()
+        if "&" in link:
+            link = link.split("&")[0]
+        return link
+
     async def search_song(self, song_name: str):
         """Search for a song by its name."""
         search_url = f"{self.base}/search/?query={song_name.replace(' ', '%20')}"
@@ -28,7 +56,7 @@ class JioSaavnAPI:
                 song_url = f"{self.base}/song/{song_id}"
                 
                 return {"title": title, "artist": artist, "song_url": song_url}
-    
+
     async def get_song_details(self, link: str):
         """Scrape JioSaavn for song details."""
         song_id = link.split("/")[-1]  # Assuming the song ID is at the end of the URL
@@ -51,16 +79,16 @@ class JioSaavnAPI:
                     "thumbnail": thumbnail,
                     "song_url": song_url,
                 }
-    
-    async def download_song(self, song_name: str):
-        """Download the song after searching it."""
-        details = await self.search_song(song_name)
+
+    async def download_song(self, link: str, video: bool = False) -> str:
+        """Download the song using aiohttp."""
+        details = await self.get_song_details(link)
         if not details:
             return None
 
         song_url = details['song_url']
         song_title = details['title']
-        song_path = f"downloads/{song_title}.mp3"
+        song_path = f"downloads/{song_title}.mp3" if not video else f"downloads/{song_title}.mp4"
         
         # Download song using aiohttp
         async with aiohttp.ClientSession() as session:
@@ -69,14 +97,50 @@ class JioSaavnAPI:
                     f.write(await response.read())
         
         return song_path
-    
-    async def play_song(self, song_name: str):
-        """Play the song by searching its name and downloading it."""
-        song_path = await self.download_song(song_name)
+
+    async def play_song(self, link: str):
+        """Play the song by downloading it."""
+        song_path = await self.download_song(link)
         if not song_path:
             return "Song not found or error occurred!"
         
         return f"Now playing: {song_path}"
+
+    async def get_lyrics(self, song: str, artist: str) -> dict:
+        # Implementation for getting lyrics using an API like Genius
+        pass
+
+    async def get_playlist(self, link: str) -> list:
+        # Implementation for getting playlist details
+        pass
+
+    async def get_data(self, link: str, limit: int = 1) -> list:
+        # Implementation for getting data about a song
+        pass
+
+    async def details(self, link: str) -> dict:
+        # Implementation for getting detailed information about a song
+        pass
+
+    async def duration(self, link: str) -> str:
+        # Implementation for getting duration of a song
+        pass
+
+    async def thumbnail(self, link: str) -> str:
+        # Implementation for getting thumbnail of a song
+        pass
+
+    async def send_song(
+        self, message: str, rand_key: str, key: int, video: bool = False
+    ) -> dict:
+        # Implementation for sending song details
+        pass
+
+    async def download(
+        self, link: str, video: Union[bool, str] = False, videoid: Union[bool, str] = None
+    ) -> str:
+        # Implementation for downloading the song in various formats
+        pass
 
 async def main():
     logging.basicConfig(level=logging.DEBUG)
@@ -94,5 +158,4 @@ async def main():
     except Exception as e:
         logging.debug(f"An error occurred: {e}")
 
-
-JioSaavan = JioSaavnAPI()
+JioSaavn = JioSaavnAPI()
