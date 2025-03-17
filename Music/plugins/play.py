@@ -130,42 +130,42 @@ async def play_music(_, message: Message, context: dict):
         return
 
     # if the user sent a query
-query = message.text.split(" ", 1)[1]
-try:
-    await hell.edit("Searching on JioSaavn ...")
-    result = await JioSaavn.search_song(query)
-    if result:
-        context = {
-            "chat_id": message.chat.id,
-            "user_id": message.from_user.id,
-            "duration": result["duration"],
-            "file": await JioSaavn.download_song(result["song_url"]),
-            "title": result["title"],
-            "user": message.from_user.mention,
-            "video_id": result["song_url"],
-            "vc_type": "voice",
-            "force": force,
-        }
-        await player.play(hell, context)
-        return
-    else:
-        await hell.edit("JioSaavn search failed. Trying YouTube ...")
-        result = await ytube.get_data(query, False)
-        context = {
-            "chat_id": message.chat.id,
-            "user_id": message.from_user.id,
-            "duration": result[0]["duration"],
-            "file": result[0]["id"],
-            "title": result[0]["title"],
-            "user": message.from_user.mention,
-            "video_id": result[0]["id"],
-            "vc_type": "video" if video else "voice",
-            "force": force,
-        }
-        await player.play(hell, context)
-        return
-except Exception as e:
-    return await hell.edit(f"**Error:**\n`{e}`")
+    query = message.text.split(" ", 1)[1]
+    try:
+        await hell.edit("Searching on JioSaavn ...")
+        result = await JioSaavn.search_song(query)
+        if result:
+            context = {
+                "chat_id": message.chat.id,
+                "user_id": message.from_user.id,
+                "duration": result["duration"],
+                "file": await JioSaavn.download_song(result["song_url"]),
+                "title": result["title"],
+                "user": message.from_user.mention,
+                "video_id": result["song_url"],
+                "vc_type": "voice",
+                "force": force,
+            }
+            await player.play(hell, context)
+            return
+        else:
+            await hell.edit("JioSaavn search failed. Trying YouTube ...")
+            result = await ytube.get_data(query, False)
+            context = {
+                "chat_id": message.chat.id,
+                "user_id": message.from_user.id,
+                "duration": result[0]["duration"],
+                "file": result[0]["id"],
+                "title": result[0]["title"],
+                "user": message.from_user.mention,
+                "video_id": result[0]["id"],
+                "vc_type": "video" if video else "voice",
+                "force": force,
+            }
+            await player.play(hell, context)
+            return
+    except Exception as e:
+        return await hell.edit(f"**Error:**\n`{e}`")
 
 
 
