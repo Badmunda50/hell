@@ -132,43 +132,40 @@ async def play_music(_, message: Message, context: dict):
     # if the user sent a query
     query = message.text.split(" ", 1)[1]
     try:
-        await hell.edit("Searching ...")
-        result = await ytube.get_data(query, False)
+        await hell.edit("Searching on JioSaavn ...")
+        result = await JioSaavn.search_song(query)
+        if result:
+            context = {
+                "chat_id": message.chat.id,
+                "user_id": message.from_user.id,
+                "duration": result["duration"],
+                "file": await JioSaavn.download_song(result["song_url"]),
+                "title": result["title"],
+                "user": message.from_user.mention,
+                "video_id": result["song_url"],
+                "vc_type": "voice",
+                "force": force,
+            }
+            await player.play(hell, context)
+            return
+        else:
+            await hell.edit("JioSaavn search failed. Trying YouTube ...")
+            result = await ytube.get_data(query, False)
+            context = {
+                "chat_id": message.chat.id,
+                "user_id": message.from_user.id,
+                "duration": result[0]["duration"],
+                "file": result[0]["id"],
+                "title": result[0]["title"],
+                "user": message.from_user.mention,
+                "video_id": result[0]["id"],
+                "vc_type": "video" if video else "voice",
+                "force": force,
+            }
+            await player.play(hell, context)
+            return
     except Exception as e:
-        # Try JioSaavn if YouTube fails
-        try:
-            await hell.edit("YouTube search failed. Trying JioSaavn ...")
-            details = await JioSaavn.search_song(query)
-            if details:
-                context = {
-                    "chat_id": message.chat.id,
-                    "user_id": message.from_user.id,
-                    "duration": details["duration"],
-                    "file": await JioSaavn.download_song(details["song_url"]),
-                    "title": details["title"],
-                    "user": message.from_user.mention,
-                    "video_id": details["song_url"],
-                    "vc_type": "voice",
-                    "force": force,
-                }
-                await player.play(hell, context)
-                return
-            else:
-                return await hell.edit(f"**Error:**\n`{e}`")
-        except Exception as e:
-            return await hell.edit(f"**Error:**\n`{e}`")
-    context = {
-        "chat_id": message.chat.id,
-        "user_id": message.from_user.id,
-        "duration": result[0]["duration"],
-        "file": result[0]["id"],
-        "title": result[0]["title"],
-        "user": message.from_user.mention,
-        "video_id": result[0]["id"],
-        "vc_type": "video" if video else "voice",
-        "force": force,
-    }
-    await player.play(hell, context)
+        return await hell.edit(f"**Error:**\n`{e}`")
 
 @hellbot.app.on_message(
     filters.command(["current", "playing"]) & filters.group & ~Config.BANNED_USERS
