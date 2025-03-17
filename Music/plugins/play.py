@@ -19,9 +19,7 @@ from Music.utils.youtube import ytube
 from Music.utils.jiosaavn import JioSaavnAPI  # Import JioSaavnAPI
 
 @hellbot.app.on_message(
-    filters.command(["play", "vplay", "fplay", "fvplay"])
-    & filters.group
-    & ~Config.BANNED_USERS
+    filters.command(["play", "vplay", "fplay", "fvplay"]) & filters.group & ~Config.BANNED_USERS
 )
 @check_mode
 @PlayWrapper
@@ -33,8 +31,9 @@ async def play_music(_, message: Message, context: dict):
     else:
         try:
             await db.update_user(user_id, "user_name", user_name)
-        except:
-            pass
+        except Exception as e:
+            print(f"Error updating user: {e}")
+
     hell = await message.reply_text("Processing ...")
     # initialise variables
     video, force, url, tgaud, tgvid = context.values()
@@ -100,27 +99,53 @@ async def play_music(_, message: Message, context: dict):
         return
 
     # if the user replied to or sent a youtube link
+    if url:
+        if not ytube.check(url):
+            return await hell.edit("Invalid YouTube URL.")
+        if "playlist" in url:
+            await hell.edit("Processing the playlist ...")
+            song_list = await ytube.get_playlist(url)
+            random.shuffle(song_list)
+            context = {
+                "user_id": message.from_user.id,
+                "user_mention": message.from_user.mention,
+            }
+            await player.playlist(hell, context, song_list, video)
+            return
+        try:
+            await hell.edit("Searching ...")
+            result = await ytube.get_data(url, False)
+        except Exception as e:
+            print(f"Error fetching YouTube data: {e}")
+            await hell.edit("YouTube cookies failed, trying JioSaavn...")
+            jiosaavn_result = await jio_saavn_api.search_song(url.split("v=")[-1] if "v=" in url else url)
+            if not jiosaavn_result:
+                return await hell.edit("Song not found on JioSaavn either.")
+            result = [jiosaavn_result]
 
-# For URL handling section
-if url:
-    if not ytube.check(url):
-        return await hell.edit("Invalid YouTube URL.")
-    if "playlist" in url:
-        await hell.edit("Processing the playlist ...")
-        song_list = await ytube.get_playlist(url)
-        random.shuffle(song_list)
         context = {
+            "chat_id": message.chat.id,
             "user_id": message.from_user.id,
-            "user_mention": message.from_user.mention,
+            "duration": result[0].get("duration", "Unknown"),
+            "file": result[0]["id"],
+            "title": result[0]["title"],
+            "user": message.from_user.mention,
+            "video_id": result[0]["id"],
+            "vc_type": "video" if video else "voice",
+            "force": force,
         }
-        await player.playlist(hell, context, song_list, video)
+        await player.play(hell, context)
         return
+
+    # For query handling section
+    query = message.text.split(" ", 1)[1]
     try:
         await hell.edit("Searching ...")
-        result = await ytube.get_data(url, False)
+        result = await ytube.get_data(query, False)
     except Exception as e:
+        print(f"Error fetching YouTube data: {e}")
         await hell.edit("YouTube cookies failed, trying JioSaavn...")
-        jiosaavn_result = await jio_saavn_api.search_song(url.split("v=")[-1] if "v=" in url else url)
+        jiosaavn_result = await jio_saavn_api.search_song(query)
         if not jiosaavn_result:
             return await hell.edit("Song not found on JioSaavn either.")
         result = [jiosaavn_result]
@@ -137,29 +162,3 @@ if url:
         "force": force,
     }
     await player.play(hell, context)
-    return
-
-# For query handling section
-query = message.text.split(" ", 1)[1]
-try:
-    await hell.edit("Searching ...")
-    result = await ytube.get_data(query, False)
-except Exception as e:
-    await hell.edit("YouTube cookies failed, trying JioSaavn...")
-    jiosaavn_result = await jio_saavn_api.search_song(query)
-    if not jiosaavn_result:
-        return await hell.edit("Song not found on JioSaavn either.")
-    result = [jiosaavn_result]
-
-context = {
-    "chat_id": message.chat.id,
-    "user_id": message.from_user.id,
-    "duration": result[0].get("duration", "Unknown"),
-    "file": result[0]["id"],
-    "title": result[0]["title"],
-    "user": message.from_user.mention,
-    "video_id": result[0]["id"],
-    "vc_type": "video" if video else "voice",
-    "force": force,
-}
-await player.play(hell, context)
