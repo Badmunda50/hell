@@ -100,59 +100,35 @@ async def play_music(_, message: Message, context: dict):
         return
 
     # if the user replied to or sent a youtube link
-    if url:
-        if not ytube.check(url):
-            return await hell.edit("Invalid YouTube URL.")
-        if "playlist" in url:
-            await hell.edit("Processing the playlist ...")
-            song_list = await ytube.get_playlist(url)
-            random.shuffle(song_list)
-            context = {
-                "user_id": message.from_user.id,
-                "user_mention": message.from_user.mention,
-            }
-            await player.playlist(hell, context, song_list, video)
-            return
-        try:
-            await hell.edit("Searching ...")
-            result = await ytube.get_data(url, False)
-        except Exception as e:
-            # If YouTube search fails, try JioSaavn
-            jiosaavn_result = await jio_saavn_api.search_song(url)
-            if not jiosaavn_result:
-                return await hell.edit(f"**Error:**\n`{e}`")
-            result = [jiosaavn_result]  # Convert to list to maintain compatibility with existing code
 
+# For URL handling section
+if url:
+    if not ytube.check(url):
+        return await hell.edit("Invalid YouTube URL.")
+    if "playlist" in url:
+        await hell.edit("Processing the playlist ...")
+        song_list = await ytube.get_playlist(url)
+        random.shuffle(song_list)
         context = {
-            "chat_id": message.chat.id,
             "user_id": message.from_user.id,
-            "duration": result[0]["duration"] if "duration" in result[0] else "Unknown",
-            "file": result[0]["id"],
-            "title": result[0]["title"],
-            "user": message.from_user.mention,
-            "video_id": result[0]["id"],
-            "vc_type": "video" if video else "voice",
-            "force": force,
+            "user_mention": message.from_user.mention,
         }
-        await player.play(hell, context)
+        await player.playlist(hell, context, song_list, video)
         return
-
-    # if the user sent a query
-    query = message.text.split(" ", 1)[1]
     try:
         await hell.edit("Searching ...")
-        result = await ytube.get_data(query, False)
+        result = await ytube.get_data(url, False)
     except Exception as e:
-        # If YouTube search fails, try JioSaavn
-        jiosaavn_result = await jio_saavn_api.search_song(query)
+        await hell.edit("YouTube cookies failed, trying JioSaavn...")
+        jiosaavn_result = await jio_saavn_api.search_song(url.split("v=")[-1] if "v=" in url else url)
         if not jiosaavn_result:
-            return await hell.edit(f"**Error:**\n`{e}`")
-        result = [jiosaavn_result]  # Convert to list to maintain compatibility with existing code
+            return await hell.edit("Song not found on JioSaavn either.")
+        result = [jiosaavn_result]
 
     context = {
         "chat_id": message.chat.id,
         "user_id": message.from_user.id,
-        "duration": result[0]["duration"] if "duration" in result[0] else "Unknown",
+        "duration": result[0].get("duration", "Unknown"),
         "file": result[0]["id"],
         "title": result[0]["title"],
         "user": message.from_user.mention,
@@ -161,3 +137,29 @@ async def play_music(_, message: Message, context: dict):
         "force": force,
     }
     await player.play(hell, context)
+    return
+
+# For query handling section
+query = message.text.split(" ", 1)[1]
+try:
+    await hell.edit("Searching ...")
+    result = await ytube.get_data(query, False)
+except Exception as e:
+    await hell.edit("YouTube cookies failed, trying JioSaavn...")
+    jiosaavn_result = await jio_saavn_api.search_song(query)
+    if not jiosaavn_result:
+        return await hell.edit("Song not found on JioSaavn either.")
+    result = [jiosaavn_result]
+
+context = {
+    "chat_id": message.chat.id,
+    "user_id": message.from_user.id,
+    "duration": result[0].get("duration", "Unknown"),
+    "file": result[0]["id"],
+    "title": result[0]["title"],
+    "user": message.from_user.mention,
+    "video_id": result[0]["id"],
+    "vc_type": "video" if video else "voice",
+    "force": force,
+}
+await player.play(hell, context)
