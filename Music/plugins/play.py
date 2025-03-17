@@ -142,7 +142,6 @@ async def play_music(_, message: Message, context: dict):
         logger.info(f"JioSaavn search result: {result}")
         
         if not result or "title" not in result:
-            # Try cleaning the query and search again
             clean_query = " ".join(query.split()).strip()
             await hell.edit(f"No results for '{query}'. Trying '{clean_query}'...")
             result = await jio_saavn_api.search_song(clean_query)
@@ -165,11 +164,16 @@ async def play_music(_, message: Message, context: dict):
         else:
             duration_str = "Unknown"
 
+        # **Fix: Ensure valid URL is used**
+        song_url = result.get("url")
+        if not song_url:
+            song_url = f"ytsearch:{result['title']}"  # Fallback to YouTube search
+
         context = {
             "chat_id": message.chat.id,
             "user_id": message.from_user.id,
             "duration": duration_str,
-            "file": result.get("url", result["id"]),  # Use URL if available, else ID
+            "file": song_url,  # Always pass a valid URL
             "title": result["title"],
             "user": message.from_user.mention,
             "video_id": result["id"],
