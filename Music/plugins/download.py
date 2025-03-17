@@ -6,7 +6,6 @@ from Music.core.clients import hellbot
 from Music.core.decorators import UserWrapper, check_mode
 from Music.helpers.formatters import formatter
 from Music.utils.pages import MakePages
-from Music.utils.youtube import ytube
 from Music.utils.jiosaavn import JioSaavn
 
 
@@ -20,7 +19,7 @@ async def songs(_, message: Message):
     hell = await message.reply_photo(
         Config.BLACK_IMG, caption=f"<b><i>Searching</i></b> “`{query}`” ..."
     )
-    all_tracks = await ytube.get_data(query, False, 10)
+    all_tracks = await JioSaavn.get_data(query, 10)
     rand_key = formatter.gen_key(str(message.from_user.id), 5)
     Config.SONG_CACHE[rand_key] = all_tracks
     await MakePages.song_page(hell, rand_key, 0)
@@ -49,7 +48,7 @@ async def lyrics(_, message: Message):
     if artist != "":
         text += f"\n__Artist:__ `{artist}`"
     hell = await message.reply_text(text)
-    results = await ytube.get_lyrics(song, artist)
+    results = await JioSaavn.get_lyrics(song, artist)
     if results:
         title = results["title"]
         image = results["image"]
@@ -83,10 +82,10 @@ async def song_cb(_, cb: CallbackQuery):
         await cb.answer("You are not allowed to do that!", show_alert=True)
         return
     if action == "adl":
-        await ytube.send_song(cb, rand_key, key, False)
+        await JioSaavn.send_song(cb, rand_key, key, False)
         return
     elif action == "vdl":
-        await ytube.send_song(cb, rand_key, key, True)
+        await JioSaavn.send_song(cb, rand_key, key, True)
         return
     elif action == "close":
         Config.SONG_CACHE.pop(rand_key)
