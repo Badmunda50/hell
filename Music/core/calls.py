@@ -28,10 +28,13 @@ from Music.utils.exceptions import (
 from Music.utils.queue import Queue
 from Music.utils.thumbnail import thumb
 from Music.utils.youtube import ytube
+from Music.utils.jiosaavn import JioSaavnAPI  # Import JioSaavnAPI
 
 from .clients import hellbot
 from .logger import LOGS
 
+# Instantiate JioSaavnAPI
+jiosaavn = JioSaavnAPI()
 
 async def __clean__(chat_id: int, force: bool):
     if force:
