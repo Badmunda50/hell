@@ -14,7 +14,7 @@ from Music.helpers.strings import TEXTS
 from .queue import Queue
 from .thumbnail import thumb
 from .youtube import ytube
-from .jiosaavn import JioSaavn  # Import JioSaavn
+
 
 class Player:
     def __init__(self) -> None:
@@ -63,29 +63,14 @@ class Player:
         ) = context.values()
         if force:
             await hellmusic.leave_vc(chat_id, True)
-        
-        # Check if video_id is from JioSaavn or YouTube
-        if "jiosaavn" in video_id:
-            try:
-                if edit:
-                    await message.edit_text("Downloading from JioSaavn ...")
-                else:
-                    await message.reply_text("Downloading from JioSaavn ...")
-                file_path = await JioSaavn.download_song(video_id, True if vc_type == "video" else False)
-            except Exception as e:
-                if edit:
-                    await message.edit_text(str(e))
-                else:
-                    await message.reply_text(str(e))
-                return
-        elif video_id == "telegram":
+        if video_id == "telegram":
             file_path = file
         else:
             try:
                 if edit:
-                    await message.edit_text("Downloading from YouTube ...")
+                    await message.edit_text("Downloading ...")
                 else:
-                    await message.reply_text("Downloading from YouTube ...")
+                    await message.reply_text("Downloading ...")
                 file_path, _ = await ytube.download(
                     video_id, True, True if vc_type == "video" else False
                 )
@@ -95,7 +80,6 @@ class Player:
                 else:
                     await message.reply_text(str(e))
                 return
-
         position = Queue.put_queue(
             chat_id,
             user_id,
