@@ -16,7 +16,7 @@ from Music.utils.play import player
 from Music.utils.queue import Queue
 from Music.utils.thumbnail import thumb
 from Music.utils.youtube import ytube
-from Music.utils.jiosaavn import JioSaavn
+
 
 @hellbot.app.on_message(
     filters.command(["play", "vplay", "fplay", "fvplay"])
@@ -39,7 +39,7 @@ async def play_music(_, message: Message, context: dict):
     # initialise variables
     video, force, url, tgaud, tgvid = context.values()
     play_limit = formatter.mins_to_secs(f"{Config.PLAY_LIMIT}:00")
-    
+
     # if the user replied to a message and that message is an audio file
     if tgaud:
         size_check = formatter.check_limit(tgaud.file_size, Config.TG_AUDIO_SIZE_LIMIT)
@@ -132,41 +132,22 @@ async def play_music(_, message: Message, context: dict):
     # if the user sent a query
     query = message.text.split(" ", 1)[1]
     try:
-        await hell.edit("Searching on JioSaavn ...")
-        result = await JioSaavn.search_song(query)
-        if result:
-            context = {
-                "chat_id": message.chat.id,
-                "user_id": message.from_user.id,
-                "duration": result["duration"],
-                "file": await JioSaavn.download_song(result["song_url"]),
-                "title": result["title"],
-                "user": message.from_user.mention,
-                "video_id": result["song_url"],
-                "vc_type": "voice",
-                "force": force,
-            }
-            await player.play(hell, context)
-            return
-        else:
-            await hell.edit("JioSaavn search failed. Trying YouTube ...")
-            result = await ytube.get_data(query, False)
-            context = {
-                "chat_id": message.chat.id,
-                "user_id": message.from_user.id,
-                "duration": result[0]["duration"],
-                "file": result[0]["id"],
-                "title": result[0]["title"],
-                "user": message.from_user.mention,
-                "video_id": result[0]["id"],
-                "vc_type": "video" if video else "voice",
-                "force": force,
-            }
-            await player.play(hell, context)
-            return
+        await hell.edit("Searching ...")
+        result = await ytube.get_data(query, False)
     except Exception as e:
         return await hell.edit(f"**Error:**\n`{e}`")
-
+    context = {
+        "chat_id": message.chat.id,
+        "user_id": message.from_user.id,
+        "duration": result[0]["duration"],
+        "file": result[0]["id"],
+        "title": result[0]["title"],
+        "user": message.from_user.mention,
+        "video_id": result[0]["id"],
+        "vc_type": "video" if video else "voice",
+        "force": force,
+    }
+    await player.play(hell, context)
 
 
 @hellbot.app.on_message(
@@ -205,6 +186,7 @@ async def playing(_, message: Message):
             pass
     Config.PLAYER_CACHE[chat_id] = sent
 
+
 @hellbot.app.on_message(
     filters.command(["queue", "que", "q"]) & filters.group & ~Config.BANNED_USERS
 )
@@ -220,6 +202,7 @@ async def queued_tracks(_, message: Message):
         return await hell.edit_text("Nothing is playing here.")
     await MakePages.queue_page(hell, collection, 0, 0, True)
 
+
 @hellbot.app.on_message(filters.command(["clean", "reload"]) & ~Config.BANNED_USERS)
 @AuthWrapper
 async def clean_queue(_, message: Message):
@@ -227,6 +210,7 @@ async def clean_queue(_, message: Message):
     hell = await message.reply_text("**Cleared Queue.**")
     await asyncio.sleep(10)
     await hell.delete()
+
 
 @hellbot.app.on_callback_query(filters.regex(r"queue") & ~Config.BANNED_USERS)
 async def queued_tracks_cb(_, cb: CallbackQuery):
